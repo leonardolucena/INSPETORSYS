@@ -403,11 +403,12 @@ O projeto foi construído em fases incrementais, cobrindo uma camada ou feature 
 
 | Item | Situação |
 |---|---|
+| Hierarquia de usuários | Login funciona para ambos os perfis do desafio, mas **não há distinção de permissões** entre Técnico e Admin — ambos veem e fazem as mesmas ações |
 | Edição de inspeções | Apenas rascunhos e itens com falha podem ser reabertos; `pending`/`synced` abrem somente leitura |
 | Sync | Eventual (batch), não push instantâneo entre dispositivos — pull ao abrir/atualizar histórico |
 | Mapa | Visualização básica OSM com marcadores; sem clustering nem navegação turn-by-turn |
 | OS encerrada | Ainda permite abrir nova inspeção em OS com status `done` |
 
-**Com mais tempo:** testes de integração E2E (Patrol/integration_test); bloqueio de inspeção em OS `done`; edição versionada de inspeções já sincronizadas.
+**Com mais tempo:** implementar **hierarquia de usuários** (Técnico vs Admin) — o desafio prevê dois perfis (`tecnico@orbytis.com.br` / `admin@orbytis.com.br`), mas por limitação de tempo o app trata ambos como usuário comum, sem rotas, telas ou ações exclusivas de administrador; testes de integração E2E (Patrol/integration_test); bloqueio de inspeção em OS `done`; edição versionada de inspeções já sincronizadas.
 
 ---
