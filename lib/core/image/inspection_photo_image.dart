@@ -41,7 +41,7 @@ class InspectionPhotoImage extends StatelessWidget {
           cacheWidth: cacheWidth,
           filterQuality: FilterQuality.medium,
           gaplessPlayback: true,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          errorBuilder: (_, _, _) => const SizedBox.shrink(),
         ),
       InspectionPhotoSourceType.network => Image.network(
           source.networkUrl!,
@@ -52,7 +52,7 @@ class InspectionPhotoImage extends StatelessWidget {
           cacheWidth: cacheWidth,
           filterQuality: FilterQuality.medium,
           gaplessPlayback: true,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          errorBuilder: (_, _, _) => const SizedBox.shrink(),
         ),
     };
   }
