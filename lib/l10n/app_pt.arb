@@ -1,0 +1,154 @@
+{
+  "@@locale": "pt",
+  "appTitle": "InspetorSYS",
+  "appSlogan": "SISTEMA DE INSPEÇÃO DE CAMPO",
+  "drawerWorkOrders": "Ordens de serviço",
+  "drawerInspectionsHistory": "Histórico de inspeções",
+  "drawerSyncInspections": "Sincronizar inspeções",
+  "drawerLanguage": "Idioma",
+  "drawerDarkMode": "Modo escuro",
+  "languagePortuguese": "Português",
+  "languageEnglish": "English",
+  "userFallback": "Usuário",
+  "connectionOnline": "Online",
+  "connectionNoInternet": "Sem internet",
+  "connectionOffline": "Offline",
+  "loginEmailLabel": "E-mail",
+  "loginPasswordLabel": "Senha",
+  "loginSubmitting": "ENTRANDO...",
+  "loginSubmit": "ENTRAR",
+  "loginInvalidCredentials": "E-mail ou senha inválidos.",
+  "workOrdersTitle": "Ordens de serviço",
+  "workOrdersLoadError": "Não foi possível carregar as ordens de serviço.",
+  "workOrdersEmptyTitle": "Nenhuma ordem de serviço",
+  "workOrdersEmptyMessageAll": "Não há ordens de serviço disponíveis no momento.",
+  "workOrdersEmptyMessageFiltered": "Nenhuma ordem com o filtro selecionado.",
+  "refreshAction": "Atualizar",
+  "retryAction": "Tentar novamente",
+  "filterAll": "Todas",
+  "workOrderStatusOpen": "Aberta",
+  "workOrderStatusInProgress": "Em andamento",
+  "workOrderStatusDone": "Concluída",
+  "workOrderPriorityHigh": "Alta",
+  "workOrderPriorityMedium": "Média",
+  "workOrderPriorityLow": "Baixa",
+  "workOrderDetailTitle": "Detalhe da OS",
+  "workOrderDetailLoadError": "Não foi possível carregar a ordem de serviço.",
+  "workOrderDescriptionLabel": "Descrição:",
+  "workOrderAddressLabel": "Endereço:",
+  "workOrderNotesLabel": "Anotações:",
+  "workOrderScheduledForLabel": "Agendada para",
+  "workOrderUpdatedAtLabel": "Atualizada em",
+  "workOrderLocationTitle": "Localização",
+  "workOrderNewInspection": "Nova inspeção",
+  "inspectionsHistoryTitle": "Histórico de inspeções",
+  "inspectionsLoadError": "Não foi possível carregar as inspeções locais.",
+  "inspectionsEmptyTitle": "Nenhuma inspeção encontrada",
+  "inspectionsEmptyMessageAll": "Você ainda não registrou inspeções neste dispositivo.",
+  "inspectionsEmptyMessageFiltered": "Nenhuma inspeção com o status selecionado.",
+  "inspectionNotEditable": "Esta inspeção já foi concluída e não pode ser editada.",
+  "inspectionRetryQueued": "Inspeção reenviada para sincronização.",
+  "inspectionRetryFailed": "Não foi possível reenviar a inspeção.",
+  "syncStatusDraft": "Rascunho",
+  "syncStatusPending": "Pendente",
+  "syncStatusSynced": "Enviado",
+  "syncStatusFailed": "Falhou",
+  "inspectionFormNewTitle": "Nova inspeção",
+  "inspectionFormContinueTitle": "Continuar inspeção",
+  "inspectionFormLoadError": "Não foi possível carregar o formulário da inspeção.",
+  "inspectionFormFieldObservation": "Observação",
+  "inspectionFormFieldCondition": "Condição do ativo",
+  "inspectionFormFieldPhoto": "Foto da evidência",
+  "inspectionFormFieldLocation": "Local da inspeção",
+  "inspectionFormSavingDraft": "Salvando...",
+  "inspectionFormSaveDraft": "Salvar rascunho",
+  "inspectionFormCompleting": "Concluindo...",
+  "inspectionFormComplete": "Concluir inspeção",
+  "inspectionFormDraftSaved": "Rascunho salvo com sucesso.",
+  "inspectionFormCompletedQueued": "Inspeção concluída e enfileirada para envio.",
+  "inspectionFormPhotoSaved": "Foto salva ({sizeKb} KB)",
+  "@inspectionFormPhotoSaved": {
+    "placeholders": {
+      "sizeKb": {"type": "String"}
+    }
+  },
+  "inspectionFormCameraPermissionDenied": "Permissão de câmera negada. Habilite nas configurações do app.",
+  "inspectionFormNotesMinLength": "Mínimo de {minLength} caracteres.",
+  "@inspectionFormNotesMinLength": {
+    "placeholders": {
+      "minLength": {"type": "int"}
+    }
+  },
+  "inspectionFormOpeningCamera": "Abrindo câmera...",
+  "inspectionFormCapturePhoto": "Capturar foto",
+  "inspectionFormRetakePhoto": "Tirar nova foto",
+  "inspectionFormCompressedImage": "Imagem comprimida — {sizeKb} KB",
+  "@inspectionFormCompressedImage": {
+    "placeholders": {
+      "sizeKb": {"type": "String"}
+    }
+  },
+  "inspectionFormGettingLocation": "Obtendo localização...",
+  "inspectionFormCaptureGps": "Capturar GPS",
+  "inspectionFormUpdateGps": "Atualizar GPS",
+  "inspectionFormOpenSettings": "Abrir configurações",
+  "inspectionFormLatitude": "Latitude: {value}",
+  "@inspectionFormLatitude": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "inspectionFormLongitude": "Longitude: {value}",
+  "@inspectionFormLongitude": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "inspectionFormAccuracy": "Precisão: {meters} m",
+  "@inspectionFormAccuracy": {
+    "placeholders": {
+      "meters": {"type": "String"}
+    }
+  },
+  "inspectionConditionGood": "Bom",
+  "inspectionConditionRegular": "Regular",
+  "inspectionConditionBad": "Ruim",
+  "inspectionConditionCritical": "Crítico",
+  "geofenceWarning": "Você está a {distance} m do ponto da OS (limite: {limit} m).",
+  "@geofenceWarning": {
+    "placeholders": {
+      "distance": {"type": "int"},
+      "limit": {"type": "int"}
+    }
+  },
+  "validationNotesRequired": "A observação é obrigatória.",
+  "validationNotesMinLength": "A observação deve ter no mínimo {minLength} caracteres.",
+  "@validationNotesMinLength": {
+    "placeholders": {
+      "minLength": {"type": "int"}
+    }
+  },
+  "validationPhotoRequired": "A foto da inspeção é obrigatória.",
+  "validationLocationRequired": "A localização GPS é obrigatória.",
+  "validationConditionRequired": "Selecione a condição do ativo.",
+  "validationRequiredFields": "Preencha todos os campos obrigatórios.",
+  "validationFormNotLoaded": "Formulário da inspeção não carregado.",
+  "errorOpenInspection": "Não foi possível abrir esta inspeção.",
+  "errorLoadInspectionForm": "Não foi possível carregar o formulário.",
+  "errorLoadWorkOrder": "Não foi possível carregar a ordem de serviço.",
+  "errorLocationPermissionDenied": "Permissão de localização negada.",
+  "errorLocationServiceDisabled": "Ative o serviço de localização do dispositivo.",
+  "errorLocationUnavailable": "Não foi possível obter a localização.",
+  "errorNetworkGeneric": "Sem conexão com a internet. Verifique sua rede e tente novamente.",
+  "syncNoInternet": "Sem conexão com a internet.",
+  "syncNothingPending": "Nenhuma inspeção pendente para sincronizar.",
+  "syncSuccessOne": "1 inspeção sincronizada.",
+  "syncSuccessMany": "{count} inspeções sincronizadas.",
+  "@syncSuccessMany": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "syncSomeFailed": "Algumas inspeções falharam ao sincronizar.",
+  "syncRetryLater": "Sincronização em andamento. Tente novamente em instantes."
+}

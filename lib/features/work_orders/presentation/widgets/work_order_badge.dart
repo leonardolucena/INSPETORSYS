@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
+import 'package:inspetorsys/core/locale/localized_labels.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
 import 'package:inspetorsys/features/work_orders/domain/enums/work_order_priority.dart';
 import 'package:inspetorsys/features/work_orders/domain/enums/work_order_status.dart';
@@ -14,11 +16,12 @@ class WorkOrderStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = _resolveAccent(isDark);
 
     return _WorkOrderBadge(
-      label: status.label,
+      label: status.localizedLabel(l10n),
       accent: accent,
     );
   }
@@ -48,11 +51,12 @@ class WorkOrderPriorityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = _resolveAccent(isDark);
 
     return _WorkOrderBadge(
-      label: priority.label,
+      label: priority.localizedLabel(l10n),
       accent: accent,
     );
   }

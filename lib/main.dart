@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inspetorsys/core/di/injection.dart';
+import 'package:inspetorsys/core/locale/presentation/cubit/locale_cubit.dart';
 import 'package:inspetorsys/core/maps/map_tile_cache_service.dart';
 import 'package:inspetorsys/core/router/app_router.dart';
 import 'package:inspetorsys/core/sync/background_sync_scheduler.dart';
@@ -17,9 +19,11 @@ import 'package:inspetorsys/core/theme/presentation/cubit/theme_cubit.dart';
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_cubit.dart';
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_state.dart';
 import 'package:inspetorsys/features/work_orders/domain/usecases/prefetch_work_orders_use_case.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
+import 'package:inspetorsys/core/locale/localized_labels.dart';
+import 'package:inspetorsys/l10n/app_localizations.dart';
 import 'package:inspetorsys/theme/app_theme.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppDateFormatter.initialize();
@@ -32,7 +36,9 @@ Future<void> main() async {
   final connectionStatusCubit = getIt<ConnectionStatusCubit>();
   final currentUserCubit = getIt<CurrentUserCubit>();
   final themeCubit = getIt<ThemeCubit>();
+  final localeCubit = getIt<LocaleCubit>();
   await themeCubit.load();
+  await localeCubit.load();
 
   final router = getIt<AppRouter>().router;
 
@@ -53,6 +59,7 @@ Future<void> main() async {
       connectionStatusCubit: connectionStatusCubit,
       currentUserCubit: currentUserCubit,
       themeCubit: themeCubit,
+      localeCubit: localeCubit,
     ),
   );
 
@@ -112,6 +119,7 @@ class MyApp extends StatelessWidget {
     required this.connectionStatusCubit,
     required this.currentUserCubit,
     required this.themeCubit,
+    required this.localeCubit,
   });
 
   final GoRouter router;
@@ -120,6 +128,7 @@ class MyApp extends StatelessWidget {
   final ConnectionStatusCubit connectionStatusCubit;
   final CurrentUserCubit currentUserCubit;
   final ThemeCubit themeCubit;
+  final LocaleCubit localeCubit;
 
   @override
   Widget build(BuildContext context) {
@@ -132,37 +141,69 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<CurrentUserCubit>.value(value: currentUserCubit),
         BlocProvider<ThemeCubit>.value(value: themeCubit),
+        BlocProvider<LocaleCubit>.value(value: localeCubit),
       ],
-      child: BlocListener<SyncCubit, SyncState>(
-        listenWhen: (previous, current) =>
-            previous.feedbackMessage != current.feedbackMessage &&
-            current.feedbackMessage != null &&
-            current.isManualTrigger,
-        listener: (context, state) {
-          final message = state.feedbackMessage!;
-          if (state.isSuccessFeedback) {
-            AppSnackbar.success(context, message);
-          } else {
-            AppSnackbar.error(context, message);
-          }
+      child: ResponsiveSizer(
+        builder: (context, orientation, screenType) {
+          return BlocBuilder<LocaleCubit, Locale>(
+            builder: (context, locale) {
+              return BlocBuilder<ThemeCubit, ThemeMode>(
+                builder: (context, themeMode) {
+                  return MaterialApp.router(
+                    title: 'InspetorSYS',
+                    debugShowCheckedModeBanner: false,
+                    theme: AppTheme.lightTheme,
+                    darkTheme: AppTheme.darkTheme,
+                    themeMode: themeMode,
+                    locale: locale,
+                    localizationsDelegates: const [
+                      AppLocalizations.delegate,
+                      GlobalMaterialLocalizations.delegate,
+                      GlobalWidgetsLocalizations.delegate,
+                      GlobalCupertinoLocalizations.delegate,
+                    ],
+                    supportedLocales: LocaleCubit.supportedLocales,
+                    scaffoldMessengerKey: AppSnackbar.messengerKey,
+                    routerConfig: router,
+                    builder: (context, child) {
+                      return BlocListener<SyncCubit, SyncState>(
+                        listenWhen: (previous, current) =>
+                            previous.feedbackMessage !=
+                                current.feedbackMessage &&
+                            current.feedbackMessage != null &&
+                            current.isManualTrigger,
+                        listener: (context, state) {
+                          final message = state.feedbackMessage;
+                          if (message == null) {
+                            return;
+                          }
+
+                          final l10n = context.l10n;
+                          final localizedMessage =
+                              state.lastResult != null &&
+                                      state.isManualTrigger &&
+                                      message != l10n.syncNoInternet
+                                  ? localizedSyncFeedback(
+                                      l10n,
+                                      state.lastResult!,
+                                    )
+                                  : localizeFailureMessage(l10n, message);
+
+                          if (state.isSuccessFeedback) {
+                            AppSnackbar.success(context, localizedMessage);
+                          } else {
+                            AppSnackbar.error(context, localizedMessage);
+                          }
+                        },
+                        child: child ?? const SizedBox.shrink(),
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          );
         },
-        child: ResponsiveSizer(
-          builder: (context, orientation, screenType) {
-            return BlocBuilder<ThemeCubit, ThemeMode>(
-              builder: (context, themeMode) {
-                return MaterialApp.router(
-                  title: 'InspetorSYS',
-                  debugShowCheckedModeBanner: false,
-                  theme: AppTheme.lightTheme,
-                  darkTheme: AppTheme.darkTheme,
-                  themeMode: themeMode,
-                  scaffoldMessengerKey: AppSnackbar.messengerKey,
-                  routerConfig: router,
-                );
-              },
-            );
-          },
-        ),
       ),
     );
   }

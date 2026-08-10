@@ -8,6 +8,8 @@ import 'package:inspetorsys/components/card.dart';
 import 'package:inspetorsys/components/elevated_button.dart';
 import 'package:inspetorsys/components/states/app_error_state.dart';
 import 'package:inspetorsys/core/maps/app_map_point.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
+import 'package:inspetorsys/core/locale/localized_labels.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
 import 'package:inspetorsys/core/router/app_routes.dart';
 import 'package:inspetorsys/core/utils/app_date_formatter.dart';
@@ -16,6 +18,7 @@ import 'package:inspetorsys/features/work_orders/presentation/cubit/work_order_d
 import 'package:inspetorsys/features/work_orders/presentation/widgets/work_order_badge.dart';
 import 'package:inspetorsys/components/states/screen_loading_shimmers.dart';
 import 'package:inspetorsys/features/work_orders/presentation/widgets/work_orders_drawer.dart';
+import 'package:inspetorsys/l10n/app_localizations.dart';
 import 'package:inspetorsys/theme/app_colors.dart';
 
 class WorkOrderDetailPage extends StatefulWidget {
@@ -40,8 +43,9 @@ class _WorkOrderDetailPageState extends State<WorkOrderDetailPage> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<WorkOrderDetailCubit, WorkOrderDetailState>(
-      builder: (context, state) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        builder: (context, state) {
+          final l10n = context.l10n;
+          final isDark = Theme.of(context).brightness == Brightness.dark;
         final screenBackgroundColor = isDark
             ? AppColors.backgroundCardDark
             : AppColors.listScreenBackgroundLight;
@@ -50,7 +54,7 @@ class _WorkOrderDetailPageState extends State<WorkOrderDetailPage> {
           backgroundColor: screenBackgroundColor,
           drawer: const WorkOrdersDrawer(),
           appBar: AppDrawerAppBar(
-            title: 'Detalhe da OS',
+            title: l10n.workOrderDetailTitle,
             backgroundColor: screenBackgroundColor,
           ),
           body: switch (state.status) {
@@ -63,21 +67,27 @@ class _WorkOrderDetailPageState extends State<WorkOrderDetailPage> {
             WorkOrderDetailStatus.failure => Padding(
                 padding: EdgeInsets.all(AppSizes.cardPadding),
                 child: AppErrorState(
-                  message: state.errorMessage ??
-                      'Não foi possível carregar a ordem de serviço.',
+                  message: localizeFailureMessage(
+                    l10n,
+                    state.errorMessage ?? l10n.workOrderDetailLoadError,
+                  ),
                   onRetry: () => context
                       .read<WorkOrderDetailCubit>()
                       .load(widget.workOrderId),
                 ),
               ),
-            WorkOrderDetailStatus.success => _buildContent(context, state),
+            WorkOrderDetailStatus.success => _buildContent(context, state, l10n),
           },
         );
       },
     );
   }
 
-  Widget _buildContent(BuildContext context, WorkOrderDetailState state) {
+  Widget _buildContent(
+    BuildContext context,
+    WorkOrderDetailState state,
+    AppLocalizations l10n,
+  ) {
     final workOrder = state.workOrder!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBackgroundColor =
@@ -120,32 +130,32 @@ class _WorkOrderDetailPageState extends State<WorkOrderDetailPage> {
                 if (workOrder.description?.isNotEmpty ?? false) ...[
                   SizedBox(height: AppSizes.spacingSm),
                   _DetailRow(
-                    label: 'Descrição:',
+                    label: l10n.workOrderDescriptionLabel,
                     value: workOrder.description!,
                   ),
                 ],
                 SizedBox(height: AppSizes.spacingXs),
                 _DetailRow(
-                  label: 'Endereço:',
+                  label: l10n.workOrderAddressLabel,
                   value: workOrder.address,
                 ),
                 if (workOrder.notes?.isNotEmpty ?? false) ...[
                   SizedBox(height: AppSizes.spacingXs),
                   _DetailRow(
-                    label: 'Anotações:',
+                    label: l10n.workOrderNotesLabel,
                     value: workOrder.notes!,
                   ),
                 ],
                 if (workOrder.scheduledAt != null) ...[
                   SizedBox(height: AppSizes.spacingXs),
                   _DetailRow(
-                    label: 'Agendada para',
+                    label: l10n.workOrderScheduledForLabel,
                     value: workOrder.scheduledAt!.toDateTimeLabel,
                   ),
                 ],
                 SizedBox(height: AppSizes.spacingXs),
                 _DetailRow(
-                  label: 'Atualizada em',
+                  label: l10n.workOrderUpdatedAtLabel,
                   value: workOrder.updatedAt.toDateTimeLabel,
                 ),
               ],
@@ -160,7 +170,7 @@ class _WorkOrderDetailPageState extends State<WorkOrderDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Localização',
+                    l10n.workOrderLocationTitle,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   SizedBox(height: AppSizes.spacingSm),
@@ -182,7 +192,7 @@ class _WorkOrderDetailPageState extends State<WorkOrderDetailPage> {
           ],
           SizedBox(height: AppSizes.spacingLg),
           AppElevatedButton(
-            label: 'Nova inspeção',
+            label: l10n.workOrderNewInspection,
             icon: Icons.assignment_outlined,
             onPressed: () {
               context.push(

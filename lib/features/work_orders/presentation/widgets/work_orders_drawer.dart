@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inspetorsys/components/connection_indicator.dart';
+import 'package:inspetorsys/components/segmented_control.dart';
 import 'package:inspetorsys/constants/app_assets.dart';
 import 'package:inspetorsys/core/connectivity/network_status.dart';
 import 'package:inspetorsys/core/connectivity/presentation/cubit/connection_status_cubit.dart';
 import 'package:inspetorsys/components/switch.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
+import 'package:inspetorsys/core/locale/presentation/cubit/locale_cubit.dart';
 import 'package:inspetorsys/core/theme/presentation/cubit/theme_cubit.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
 import 'package:inspetorsys/core/router/app_routes.dart';
@@ -43,6 +46,7 @@ class WorkOrdersDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final drawerBackgroundColor = isDark
         ? AppColors.backgroundCardDark
@@ -78,19 +82,19 @@ class WorkOrdersDrawer extends StatelessWidget {
               SizedBox(height: AppSizes.spacingLg),
               _DrawerMenuItem(
                 icon: Icons.assignment_outlined,
-                label: 'Ordens de serviço',
+                label: l10n.drawerWorkOrders,
                 onTap: () => _navigateToWorkOrders(context),
               ),
               _DrawerMenuItem(
                 icon: Icons.history,
-                label: 'Histórico de inspeções',
+                label: l10n.drawerInspectionsHistory,
                 onTap: () => _navigateToInspectionsHistory(context),
               ),
               BlocBuilder<SyncCubit, SyncState>(
                 builder: (context, syncState) {
                   return _DrawerMenuItem(
                     icon: Icons.sync,
-                    label: 'Sincronizar inspeções',
+                    label: l10n.drawerSyncInspections,
                     trailing: syncState.isSyncing
                         ? SizedBox(
                             width: AppSizes.iconMd,
@@ -113,6 +117,16 @@ class WorkOrdersDrawer extends StatelessWidget {
                 },
               ),
               const Spacer(),
+              BlocBuilder<LocaleCubit, Locale>(
+                builder: (context, locale) {
+                  return _DrawerLanguageSelector(
+                    selectedLocale: locale,
+                    onSelected: (selectedLocale) =>
+                        context.read<LocaleCubit>().setLocale(selectedLocale),
+                  );
+                },
+              ),
+              SizedBox(height: AppSizes.spacingMd),
               BlocBuilder<ThemeCubit, ThemeMode>(
                 builder: (context, themeMode) {
                   return _DrawerThemeToggle(
@@ -128,6 +142,7 @@ class WorkOrdersDrawer extends StatelessWidget {
                   return _DrawerProfileSection(
                     user: userState.user,
                     isLoading: userState.status == CurrentUserStatus.loading,
+                    userFallbackLabel: l10n.userFallback,
                     onSignOut: () {
                       Navigator.of(context).pop();
                       context.read<AuthSessionCubit>().signOut();
@@ -196,6 +211,77 @@ class _DrawerMenuItem extends StatelessWidget {
   }
 }
 
+class _DrawerLanguageSelector extends StatelessWidget {
+  const _DrawerLanguageSelector({
+    required this.selectedLocale,
+    required this.onSelected,
+  });
+
+  final Locale selectedLocale;
+  final ValueChanged<Locale> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBackgroundColor =
+        isDark ? AppColors.backgroundDark : AppColors.listScreenCardLight;
+    final borderColor = isDark
+        ? AppColors.borderCardDark
+        : AppColors.listScreenBorderLight;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSizes.spacingSm,
+        vertical: AppSizes.spacingSm,
+      ),
+      decoration: BoxDecoration(
+        color: cardBackgroundColor,
+        borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.language_outlined,
+                size: AppSizes.iconMd,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              SizedBox(width: AppSizes.spacingMd),
+              Expanded(
+                child: Text(
+                  l10n.drawerLanguage,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSizes.spacingSm),
+          AppSegmentedControl<Locale>(
+            selected: selectedLocale,
+            onSelected: onSelected,
+            segments: [
+              AppSegmentedControlSegment(
+                value: const Locale('pt'),
+                label: l10n.languagePortuguese,
+              ),
+              AppSegmentedControlSegment(
+                value: const Locale('en'),
+                label: l10n.languageEnglish,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DrawerThemeToggle extends StatelessWidget {
   const _DrawerThemeToggle({
     required this.isDarkMode,
@@ -207,6 +293,7 @@ class _DrawerThemeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBackgroundColor =
         isDark ? AppColors.backgroundDark : AppColors.listScreenCardLight;
@@ -234,7 +321,7 @@ class _DrawerThemeToggle extends StatelessWidget {
           SizedBox(width: AppSizes.spacingMd),
           Expanded(
             child: Text(
-              'Modo escuro',
+              l10n.drawerDarkMode,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
@@ -254,11 +341,13 @@ class _DrawerProfileSection extends StatelessWidget {
   const _DrawerProfileSection({
     required this.user,
     required this.isLoading,
+    required this.userFallbackLabel,
     required this.onSignOut,
   });
 
   final User? user;
   final bool isLoading;
+  final String userFallbackLabel;
   final VoidCallback onSignOut;
 
   @override
@@ -310,7 +399,7 @@ class _DrawerProfileSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user?.name ?? 'Usuário',
+                        user?.name ?? userFallbackLabel,
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),

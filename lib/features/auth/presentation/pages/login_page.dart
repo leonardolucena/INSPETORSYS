@@ -4,6 +4,8 @@ import 'package:inspetorsys/components/elevated_button.dart';
 import 'package:inspetorsys/components/text_field.dart';
 import 'package:inspetorsys/constants/app_assets.dart';
 import 'package:inspetorsys/core/feedback/app_snackbar.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
+import 'package:inspetorsys/core/locale/localized_labels.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
 import 'package:inspetorsys/theme/app_colors.dart';
 import 'package:inspetorsys/features/auth/presentation/cubit/auth_session_cubit.dart';
@@ -55,7 +57,10 @@ class _LoginPageState extends State<LoginPage> {
             state.errorMessage != null &&
             state.emailError == null &&
             state.passwordError == null) {
-          AppSnackbar.error(context, state.errorMessage!);
+          AppSnackbar.error(
+            context,
+            localizeFailureMessage(context.l10n, state.errorMessage!),
+          );
         }
       },
       child: Scaffold(
@@ -64,6 +69,8 @@ class _LoginPageState extends State<LoginPage> {
             padding: EdgeInsets.all(AppSizes.cardPadding),
             child: BlocBuilder<LoginCubit, LoginState>(
               builder: (context, state) {
+                final l10n = context.l10n;
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -82,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     SizedBox(height: AppSizes.spacingXs),
                     Text(
-                      AppBranding.slogan,
+                      l10n.appSlogan,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
@@ -96,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(height: AppSizes.spacing3xl),
                     AppTextField(
                       controller: _emailController,
-                      label: 'E-mail',
+                      label: l10n.loginEmailLabel,
                       compact: true,
                       errorText: state.emailError,
                       keyboardType: TextInputType.emailAddress,
@@ -109,7 +116,7 @@ class _LoginPageState extends State<LoginPage> {
                     AppTextField(
                       controller: _passwordController,
                       focusNode: _passwordFocusNode,
-                      label: 'Senha',
+                      label: l10n.loginPasswordLabel,
                       compact: true,
                       errorText: state.passwordError,
                       obscureText: _obscurePassword,
@@ -129,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
                       onSubmitted: (_) => _submit(),
                     ),
                     AppElevatedButton(
-                      label: state.isSubmitting ? 'ENTRANDO...' : 'ENTRAR',
+                      label: state.isSubmitting ? l10n.loginSubmitting : l10n.loginSubmit,
                       textColor: AppColors.primaryTextColorLight,
                       labelStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,

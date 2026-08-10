@@ -26,6 +26,12 @@ import 'package:inspetorsys/core/image/flutter_image_compressor.dart' as _i428;
 import 'package:inspetorsys/core/image/image_compressor.dart' as _i14;
 import 'package:inspetorsys/core/image/image_picker_service.dart' as _i14;
 import 'package:inspetorsys/core/image/inspection_photo_service.dart' as _i366;
+import 'package:inspetorsys/core/locale/locale_preference_storage.dart'
+    as _i569;
+import 'package:inspetorsys/core/locale/presentation/cubit/locale_cubit.dart'
+    as _i437;
+import 'package:inspetorsys/core/locale/shared_prefs_locale_preference_storage.dart'
+    as _i793;
 import 'package:inspetorsys/core/location/geo_distance_calculator.dart' as _i94;
 import 'package:inspetorsys/core/location/geolocator_location_service.dart'
     as _i247;
@@ -209,6 +215,11 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i806.InspectionLocalDataSource>(
       () => _i322.InspectionLocalDataSourceImpl(gh<_i736.AppDatabase>()),
     );
+    gh.lazySingleton<_i569.LocalePreferenceStorage>(
+      () => _i793.SharedPrefsLocalePreferenceStorage(
+        gh<_i460.SharedPreferences>(),
+      ),
+    );
     gh.lazySingleton<_i917.WorkOrderLocalDataSource>(
       () => _i772.WorkOrderLocalDataSourceImpl(gh<_i736.AppDatabase>()),
     );
@@ -218,6 +229,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i397.UuidGenerator>(() => const _i911.AppUuidGenerator());
     gh.lazySingleton<_i4.SessionTokenProvider>(
       () => _i4.SessionTokenProvider(gh<_i288.TokenStorage>()),
+    );
+    gh.lazySingleton<_i437.LocaleCubit>(
+      () => _i437.LocaleCubit(gh<_i569.LocalePreferenceStorage>()),
     );
     gh.lazySingleton<_i566.LocationService>(
       () => _i247.GeolocatorLocationService(gh<_i544.PermissionService>()),

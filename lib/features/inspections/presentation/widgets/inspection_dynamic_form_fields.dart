@@ -6,8 +6,11 @@ import 'package:inspetorsys/components/inline_button.dart';
 import 'package:inspetorsys/components/radio.dart';
 import 'package:inspetorsys/components/text_field.dart';
 import 'package:inspetorsys/core/location/geo_coordinates.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
+import 'package:inspetorsys/core/locale/localized_labels.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
 import 'package:inspetorsys/features/inspections/domain/entities/inspection_form_schema.dart';
+import 'package:inspetorsys/features/inspections/domain/constants/inspection_geofence_constants.dart';
 import 'package:inspetorsys/features/inspections/domain/enums/inspection_condition.dart';
 import 'package:inspetorsys/features/inspections/domain/enums/inspection_form_field_type.dart';
 import 'package:inspetorsys/features/inspections/presentation/cubit/inspection_form_state.dart';
@@ -121,13 +124,14 @@ class _ObservationField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final minLength = field.minLength ?? state.observationMinLength;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          field.label,
+          localizedInspectionFormFieldLabel(l10n, field),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         SizedBox(height: AppSizes.spacingXs),
@@ -135,8 +139,8 @@ class _ObservationField extends StatelessWidget {
           controller: notesController,
           focusNode: notesFocusNode,
           label: '',
-          errorText: state.notesError,
-          helperText: 'Mínimo de $minLength caracteres.',
+          errorText: localizeValidationMessage(l10n, state.notesError),
+          helperText: l10n.inspectionFormNotesMinLength(minLength),
           reserveErrorSpace: false,
           minLines: 5,
           maxLines: 8,
@@ -162,11 +166,13 @@ class _PhotoField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          field.label,
+          localizedInspectionFormFieldLabel(l10n, field),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         SizedBox(height: AppSizes.spacingSm),
@@ -175,10 +181,10 @@ class _PhotoField extends StatelessWidget {
           children: [
             AppElevatedButton(
               label: state.isCapturingPhoto
-                  ? 'Abrindo câmera...'
+                  ? l10n.inspectionFormOpeningCamera
                   : state.photoPath == null
-                      ? 'Capturar foto'
-                      : 'Tirar nova foto',
+                      ? l10n.inspectionFormCapturePhoto
+                      : l10n.inspectionFormRetakePhoto,
               icon: Icons.photo_camera_outlined,
               onPressed: state.isCapturingPhoto ? null : onCapturePhoto,
             ),
@@ -196,8 +202,9 @@ class _PhotoField extends StatelessWidget {
               if (state.photoSizeBytes != null) ...[
                 SizedBox(height: AppSizes.spacingXs),
                 Text(
-                  'Imagem comprimida — '
-                  '${(state.photoSizeBytes! / 1024).toStringAsFixed(0)} KB',
+                  l10n.inspectionFormCompressedImage(
+                    (state.photoSizeBytes! / 1024).toStringAsFixed(0),
+                  ),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -205,7 +212,7 @@ class _PhotoField extends StatelessWidget {
             if (state.photoError != null) ...[
               SizedBox(height: AppSizes.spacingSm),
               Text(
-                state.photoError!,
+                localizeValidationMessage(l10n, state.photoError)!,
                 style: AppTextTheme.error,
               ),
             ],
@@ -231,11 +238,13 @@ class _LocationField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          field.label,
+          localizedInspectionFormFieldLabel(l10n, field),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         SizedBox(height: AppSizes.spacingSm),
@@ -244,10 +253,10 @@ class _LocationField extends StatelessWidget {
           children: [
             AppElevatedButton(
               label: state.isCapturingLocation
-                  ? 'Obtendo localização...'
+                  ? l10n.inspectionFormGettingLocation
                   : state.coordinates == null
-                      ? 'Capturar GPS'
-                      : 'Atualizar GPS',
+                      ? l10n.inspectionFormCaptureGps
+                      : l10n.inspectionFormUpdateGps,
               icon: Icons.my_location_outlined,
               onPressed:
                   state.isCapturingLocation ? null : onCaptureLocation,
@@ -256,21 +265,25 @@ class _LocationField extends StatelessWidget {
               SizedBox(height: AppSizes.spacingMd),
               _LocationInfo(coordinates: state.coordinates!),
             ],
-            if (state.geofenceWarning != null) ...[
+            if (state.distanceFromWorkOrderMeters != null &&
+                state.workOrderLatitude != null &&
+                state.workOrderLongitude != null) ...[
               SizedBox(height: AppSizes.spacingSm),
-              _GeofenceWarningBanner(message: state.geofenceWarning!),
+              _GeofenceWarningBanner(
+                distanceMeters: state.distanceFromWorkOrderMeters!,
+              ),
             ],
             if (state.locationError != null) ...[
               SizedBox(height: AppSizes.spacingSm),
               Text(
-                state.locationError!,
+                localizeValidationMessage(l10n, state.locationError)!,
                 style: AppTextTheme.error,
               ),
             ],
             if (state.showLocationSettingsAction) ...[
               SizedBox(height: AppSizes.spacingSm),
               AppInlineButton(
-                label: 'Abrir configurações',
+                label: l10n.inspectionFormOpenSettings,
                 icon: Icons.settings_outlined,
                 onPressed: onOpenLocationSettings,
               ),
@@ -295,6 +308,7 @@ class _ConditionField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final options = field.options
         .map(InspectionConditionX.fromApiValue)
         .whereType<InspectionCondition>()
@@ -308,7 +322,7 @@ class _ConditionField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          field.label,
+          localizedInspectionFormFieldLabel(l10n, field),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         SizedBox(height: AppSizes.spacingSm),
@@ -324,6 +338,7 @@ class _ConditionField extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: _buildConditionOptions(
+                        context: context,
                         options: leftOptions,
                         groupValue: state.condition,
                         onChanged: onConditionChanged,
@@ -334,6 +349,7 @@ class _ConditionField extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: _buildConditionOptions(
+                        context: context,
                         options: rightOptions,
                         groupValue: state.condition,
                         onChanged: onConditionChanged,
@@ -345,7 +361,7 @@ class _ConditionField extends StatelessWidget {
               if (state.conditionError != null) ...[
                 SizedBox(height: AppSizes.spacingXs),
                 Text(
-                  state.conditionError!,
+                  localizeValidationMessage(l10n, state.conditionError)!,
                   style: AppTextTheme.error,
                 ),
               ],
@@ -357,10 +373,12 @@ class _ConditionField extends StatelessWidget {
   }
 
   List<Widget> _buildConditionOptions({
+    required BuildContext context,
     required List<InspectionCondition> options,
     required InspectionCondition? groupValue,
     required ValueChanged<InspectionCondition?> onChanged,
   }) {
+    final l10n = context.l10n;
     final children = <Widget>[];
 
     for (var index = 0; index < options.length; index++) {
@@ -372,7 +390,7 @@ class _ConditionField extends StatelessWidget {
       children.add(
         AppRadio<InspectionCondition>(
           dense: true,
-          label: condition.label,
+          label: condition.localizedLabel(l10n),
           value: condition,
           groupValue: groupValue,
           onChanged: onChanged,
@@ -385,12 +403,21 @@ class _ConditionField extends StatelessWidget {
 }
 
 class _GeofenceWarningBanner extends StatelessWidget {
-  const _GeofenceWarningBanner({required this.message});
+  const _GeofenceWarningBanner({required this.distanceMeters});
 
-  final String message;
+  final double distanceMeters;
 
   @override
   Widget build(BuildContext context) {
+    if (distanceMeters <= InspectionGeofenceConstants.warningRadiusMeters) {
+      return const SizedBox.shrink();
+    }
+
+    final l10n = context.l10n;
+    final message = localizedGeofenceWarning(
+      l10n,
+      distanceMeters: distanceMeters,
+    );
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -439,20 +466,23 @@ class _LocationInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final accuracyLabel = coordinates.accuracyMeters == null
         ? null
-        : 'Precisão: ${coordinates.accuracyMeters!.toStringAsFixed(0)} m';
+        : l10n.inspectionFormAccuracy(
+            coordinates.accuracyMeters!.toStringAsFixed(0),
+          );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Latitude: ${coordinates.latitude.toStringAsFixed(5)}',
+          l10n.inspectionFormLatitude(coordinates.latitude.toStringAsFixed(5)),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         SizedBox(height: AppSizes.spacingXs),
         Text(
-          'Longitude: ${coordinates.longitude.toStringAsFixed(5)}',
+          l10n.inspectionFormLongitude(coordinates.longitude.toStringAsFixed(5)),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         if (accuracyLabel != null) ...[

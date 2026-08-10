@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:inspetorsys/components/states/app_empty_state.dart';
 import 'package:inspetorsys/components/states/app_error_state.dart';
 import 'package:inspetorsys/core/feedback/app_snackbar.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
 import 'package:inspetorsys/core/router/app_routes.dart';
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_cubit.dart';
@@ -12,7 +13,9 @@ import 'package:inspetorsys/features/work_orders/presentation/cubit/work_orders_
 import 'package:inspetorsys/features/work_orders/presentation/widgets/work_order_card.dart';
 import 'package:inspetorsys/features/work_orders/presentation/widgets/work_order_card_shimmer.dart';
 import 'package:inspetorsys/features/work_orders/presentation/widgets/work_order_status_filter_bar.dart';
+import 'package:inspetorsys/core/locale/localized_labels.dart';
 import 'package:inspetorsys/features/work_orders/presentation/widgets/work_orders_drawer.dart';
+import 'package:inspetorsys/l10n/app_localizations.dart';
 import 'package:inspetorsys/theme/app_colors.dart';
 
 class WorkOrdersListPage extends StatefulWidget {
@@ -45,12 +48,16 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
               current.errorMessage != null &&
               current.status == WorkOrdersListStatus.success,
           listener: (context, state) {
-            AppSnackbar.error(context, state.errorMessage!);
+            AppSnackbar.error(
+              context,
+              localizeFailureMessage(context.l10n, state.errorMessage!),
+            );
           },
         ),
       ],
       child: BlocBuilder<WorkOrdersListCubit, WorkOrdersListState>(
         builder: (context, state) {
+          final l10n = context.l10n;
           final isDark = Theme.of(context).brightness == Brightness.dark;
           final listBackgroundColor = isDark
               ? AppColors.backgroundCardDark
@@ -63,7 +70,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
               backgroundColor: listBackgroundColor,
               surfaceTintColor: Colors.transparent,
               centerTitle: true,
-              title: const Text('Ordens de serviço'),
+              title: Text(l10n.workOrdersTitle),
             ),
             body: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -81,7 +88,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                         context.read<WorkOrdersListCubit>().setStatusFilter,
                   ),
                 ),
-                Expanded(child: _buildBody(context, state)),
+                Expanded(child: _buildBody(context, state, l10n)),
               ],
             ),
           );
@@ -90,7 +97,11 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
     );
   }
 
-  Widget _buildBody(BuildContext context, WorkOrdersListState state) {
+  Widget _buildBody(
+    BuildContext context,
+    WorkOrdersListState state,
+    AppLocalizations l10n,
+  ) {
     return switch (state.status) {
       WorkOrdersListStatus.initial ||
       WorkOrdersListStatus.loading =>
@@ -101,19 +112,21 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
       WorkOrdersListStatus.failure => Padding(
           padding: EdgeInsets.all(AppSizes.cardPadding),
           child: AppErrorState(
-            message: state.errorMessage ??
-                'Não foi possível carregar as ordens de serviço.',
+            message: localizeFailureMessage(
+              l10n,
+              state.errorMessage ?? l10n.workOrdersLoadError,
+            ),
             onRetry: () => context.read<WorkOrdersListCubit>().load(),
           ),
         ),
       WorkOrdersListStatus.empty => Padding(
           padding: EdgeInsets.all(AppSizes.cardPadding),
           child: AppEmptyState(
-            title: 'Nenhuma ordem de serviço',
+            title: l10n.workOrdersEmptyTitle,
             message: state.statusFilter == null
-                ? 'Não há ordens de serviço disponíveis no momento.'
-                : 'Nenhuma ordem com o filtro selecionado.',
-            actionLabel: 'Atualizar',
+                ? l10n.workOrdersEmptyMessageAll
+                : l10n.workOrdersEmptyMessageFiltered,
+            actionLabel: l10n.refreshAction,
             onAction: () => context.read<WorkOrdersListCubit>().refresh(),
           ),
         ),

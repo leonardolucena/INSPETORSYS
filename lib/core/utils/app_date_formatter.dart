@@ -1,9 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
 abstract final class AppDateFormatter {
-  static const locale = 'pt_BR';
+  static const _portugueseLocale = 'pt_BR';
+  static const _englishLocale = 'en_US';
 
+  static var _locale = _portugueseLocale;
   static var _initialized = false;
 
   static Future<void> initialize() async {
@@ -11,20 +14,33 @@ abstract final class AppDateFormatter {
       return;
     }
 
-    await initializeDateFormatting(locale);
+    await initializeDateFormatting(_locale);
+    _initialized = true;
+  }
+
+  static Future<void> setLocale(Locale locale) async {
+    final localeName =
+        locale.languageCode == 'en' ? _englishLocale : _portugueseLocale;
+
+    if (_locale == localeName && _initialized) {
+      return;
+    }
+
+    await initializeDateFormatting(localeName);
+    _locale = localeName;
     _initialized = true;
   }
 
   static String formatShortDate(DateTime date) {
-    return DateFormat('dd/MM/yyyy', locale).format(date);
+    return DateFormat('dd/MM/yyyy', _locale).format(date);
   }
 
   static String formatDateTime(DateTime date) {
-    return DateFormat('dd/MM/yyyy HH:mm', locale).format(date);
+    return DateFormat('dd/MM/yyyy HH:mm', _locale).format(date);
   }
 
   static String formatTime(DateTime date) {
-    return DateFormat('HH:mm', locale).format(date);
+    return DateFormat('HH:mm', _locale).format(date);
   }
 
   static String? formatShortDateNullable(DateTime? date) {

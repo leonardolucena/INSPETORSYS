@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:inspetorsys/core/connectivity/network_status.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
+import 'package:inspetorsys/l10n/app_localizations.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
 import 'package:inspetorsys/theme/app_colors.dart';
 
@@ -13,8 +15,9 @@ class AppConnectionIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colors = _resolveColors(status, isDark);
+    final colors = _resolveColors(status, isDark, l10n);
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -50,10 +53,11 @@ class AppConnectionIndicator extends StatelessWidget {
   _ConnectionIndicatorColors _resolveColors(
     NetworkStatus status,
     bool isDark,
+    AppLocalizations l10n,
   ) {
     return switch (status) {
       NetworkStatus.online => _ConnectionIndicatorColors(
-          label: 'Online',
+          label: l10n.connectionOnline,
           icon: Icons.wifi,
           foreground: isDark ? AppColors.statusSuccessDark : AppColors.statusSuccess,
           background:
@@ -63,7 +67,7 @@ class AppConnectionIndicator extends StatelessWidget {
               : AppColors.statusSuccessBorder,
         ),
       NetworkStatus.connectedNoInternet => _ConnectionIndicatorColors(
-          label: 'Sem internet',
+          label: l10n.connectionNoInternet,
           icon: Icons.wifi_off,
           foreground:
               isDark ? AppColors.statusPendingDark : AppColors.statusPending,
@@ -74,7 +78,7 @@ class AppConnectionIndicator extends StatelessWidget {
               : AppColors.statusPendingBorder,
         ),
       NetworkStatus.offline => _ConnectionIndicatorColors(
-          label: 'Offline',
+          label: l10n.connectionOffline,
           icon: Icons.signal_wifi_off,
           foreground: isDark ? AppColors.statusDangerDark : AppColors.statusDanger,
           background:

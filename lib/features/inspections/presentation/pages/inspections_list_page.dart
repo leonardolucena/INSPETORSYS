@@ -7,6 +7,8 @@ import 'package:inspetorsys/components/app_drawer_app_bar_leading.dart';
 import 'package:inspetorsys/components/states/app_empty_state.dart';
 import 'package:inspetorsys/components/states/app_error_state.dart';
 import 'package:inspetorsys/core/feedback/app_snackbar.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
+import 'package:inspetorsys/core/locale/localized_labels.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
 import 'package:inspetorsys/core/router/app_routes.dart';
 import 'package:inspetorsys/features/inspections/domain/entities/local_inspection_list_item.dart';
@@ -19,6 +21,7 @@ import 'package:inspetorsys/features/inspections/presentation/widgets/inspection
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_cubit.dart';
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_state.dart';
 import 'package:inspetorsys/features/work_orders/presentation/widgets/work_orders_drawer.dart';
+import 'package:inspetorsys/l10n/app_localizations.dart';
 import 'package:inspetorsys/theme/app_colors.dart';
 
 class InspectionsListPage extends StatefulWidget {
@@ -54,10 +57,16 @@ class _InspectionsListPageState extends State<InspectionsListPage> {
             final syncCubit = context.read<SyncCubit>();
 
             if (state.actionFeedbackSuccess) {
-              AppSnackbar.success(context, message);
+              AppSnackbar.success(
+                context,
+                localizeFailureMessage(context.l10n, message),
+              );
               unawaited(syncCubit.syncNow());
             } else {
-              AppSnackbar.error(context, message);
+              AppSnackbar.error(
+                context,
+                localizeFailureMessage(context.l10n, message),
+              );
             }
             inspectionsCubit.clearActionFeedback();
           },
@@ -74,6 +83,7 @@ class _InspectionsListPageState extends State<InspectionsListPage> {
       ],
       child: BlocBuilder<InspectionsListCubit, InspectionsListState>(
         builder: (context, state) {
+          final l10n = context.l10n;
           final isDark = Theme.of(context).brightness == Brightness.dark;
           final listBackgroundColor = isDark
               ? AppColors.backgroundCardDark
@@ -83,7 +93,7 @@ class _InspectionsListPageState extends State<InspectionsListPage> {
             backgroundColor: listBackgroundColor,
             drawer: const WorkOrdersDrawer(),
             appBar: AppDrawerAppBar(
-              title: 'Histórico de inspeções',
+              title: l10n.inspectionsHistoryTitle,
               backgroundColor: listBackgroundColor,
             ),
             body: Column(
@@ -102,7 +112,7 @@ class _InspectionsListPageState extends State<InspectionsListPage> {
                         context.read<InspectionsListCubit>().setStatusFilter,
                   ),
                 ),
-                Expanded(child: _buildBody(context, state)),
+                Expanded(child: _buildBody(context, state, l10n)),
               ],
             ),
           );
@@ -111,7 +121,11 @@ class _InspectionsListPageState extends State<InspectionsListPage> {
     );
   }
 
-  Widget _buildBody(BuildContext context, InspectionsListState state) {
+  Widget _buildBody(
+    BuildContext context,
+    InspectionsListState state,
+    AppLocalizations l10n,
+  ) {
     return switch (state.status) {
       InspectionsListStatus.initial ||
       InspectionsListStatus.loading =>
@@ -122,19 +136,21 @@ class _InspectionsListPageState extends State<InspectionsListPage> {
       InspectionsListStatus.failure => Padding(
           padding: EdgeInsets.all(AppSizes.cardPadding),
           child: AppErrorState(
-            message: state.errorMessage ??
-                'Não foi possível carregar as inspeções locais.',
+            message: localizeFailureMessage(
+              l10n,
+              state.errorMessage ?? l10n.inspectionsLoadError,
+            ),
             onRetry: () => context.read<InspectionsListCubit>().load(),
           ),
         ),
       InspectionsListStatus.empty => Padding(
           padding: EdgeInsets.all(AppSizes.cardPadding),
           child: AppEmptyState(
-            title: 'Nenhuma inspeção encontrada',
+            title: l10n.inspectionsEmptyTitle,
             message: state.statusFilter == null
-                ? 'Você ainda não registrou inspeções neste dispositivo.'
-                : 'Nenhuma inspeção com o status selecionado.',
-            actionLabel: 'Atualizar',
+                ? l10n.inspectionsEmptyMessageAll
+                : l10n.inspectionsEmptyMessageFiltered,
+            actionLabel: l10n.refreshAction,
             onAction: () => context.read<InspectionsListCubit>().refresh(),
           ),
         ),
@@ -175,7 +191,7 @@ class _InspectionsListPageState extends State<InspectionsListPage> {
         status != InspectionSyncStatus.failed) {
       AppSnackbar.info(
         context,
-        'Esta inspeção já foi concluída e não pode ser editada.',
+        context.l10n.inspectionNotEditable,
       );
       return;
     }

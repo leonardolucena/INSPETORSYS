@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
+import 'package:inspetorsys/l10n/app_localizations.dart';
 import 'package:inspetorsys/theme/app_colors.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
@@ -20,11 +22,11 @@ class AppStatusBadge extends StatelessWidget {
   final AppSyncStatus status;
   final String? label;
 
-  String get _defaultLabel => switch (status) {
-        AppSyncStatus.draft => 'Rascunho',
-        AppSyncStatus.pending => 'Pendente',
-        AppSyncStatus.synced => 'Enviado',
-        AppSyncStatus.failed => 'Falhou',
+  String _labelFor(AppLocalizations l10n) => switch (status) {
+        AppSyncStatus.draft => l10n.syncStatusDraft,
+        AppSyncStatus.pending => l10n.syncStatusPending,
+        AppSyncStatus.synced => l10n.syncStatusSynced,
+        AppSyncStatus.failed => l10n.syncStatusFailed,
       };
 
   IconData get _icon => switch (status) {
@@ -36,6 +38,7 @@ class AppStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = _resolveColors(isDark);
 
@@ -59,7 +62,7 @@ class AppStatusBadge extends StatelessWidget {
           ),
           SizedBox(width: AppSizes.spacingXs),
           Text(
-            label ?? _defaultLabel,
+            label ?? _labelFor(l10n),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: colors.foreground,
                   fontWeight: FontWeight.w600,

@@ -3,6 +3,8 @@ import 'package:inspetorsys/components/accent_underline_text.dart';
 import 'package:inspetorsys/components/outline_button.dart';
 import 'package:inspetorsys/components/card.dart';
 import 'package:inspetorsys/components/status_badge.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
+import 'package:inspetorsys/core/locale/localized_labels.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
 import 'package:inspetorsys/core/utils/app_date_formatter.dart';
 import 'package:inspetorsys/features/inspections/domain/entities/local_inspection_list_item.dart';
@@ -29,6 +31,7 @@ class InspectionListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final inspection = item.inspection;
     final workOrderLabel = item.workOrderCode ?? inspection.workOrderId;
     final errorMessage = inspection.syncErrorMessage?.trim();
@@ -76,7 +79,7 @@ class InspectionListCard extends StatelessWidget {
               errorMessage.isNotEmpty) ...[
             SizedBox(height: AppSizes.spacingSm),
             Text(
-              errorMessage,
+              localizeFailureMessage(l10n, errorMessage),
               style: AppTextTheme.error,
             ),
           ],
@@ -86,7 +89,7 @@ class InspectionListCard extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: AppOutlineButton(
-                label: 'Tentar novamente',
+                label: l10n.retryAction,
                 icon: Icons.refresh,
                 expand: false,
                 enabled: !isRetrying,

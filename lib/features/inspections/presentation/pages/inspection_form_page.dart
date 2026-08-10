@@ -9,7 +9,10 @@ import 'package:inspetorsys/components/outline_button.dart';
 import 'package:inspetorsys/components/states/app_error_state.dart';
 import 'package:inspetorsys/core/feedback/app_snackbar.dart';
 import 'package:inspetorsys/core/image/image_exception.dart';
+import 'package:inspetorsys/core/locale/l10n_extensions.dart';
+import 'package:inspetorsys/core/locale/localized_labels.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
+import 'package:inspetorsys/features/inspections/domain/constants/inspection_geofence_constants.dart';
 import 'package:inspetorsys/features/inspections/presentation/cubit/inspection_form_cubit.dart';
 import 'package:inspetorsys/features/inspections/presentation/cubit/inspection_form_state.dart';
 import 'package:inspetorsys/features/inspections/presentation/widgets/inspection_dynamic_form_fields.dart';
@@ -70,7 +73,9 @@ class _InspectionFormPageState extends State<InspectionFormPage> {
       if (state.photoPath != null && state.photoSizeBytes != null) {
         AppSnackbar.success(
           context,
-          'Foto salva (${(state.photoSizeBytes! / 1024).toStringAsFixed(0)} KB)',
+          context.l10n.inspectionFormPhotoSaved(
+            (state.photoSizeBytes! / 1024).toStringAsFixed(0),
+          ),
         );
       }
     } on ImagePermissionDeniedException {
@@ -80,14 +85,17 @@ class _InspectionFormPageState extends State<InspectionFormPage> {
 
       AppSnackbar.error(
         context,
-        'Permissão de câmera negada. Habilite nas configurações do app.',
+        context.l10n.inspectionFormCameraPermissionDenied,
       );
     } on ImageException catch (error) {
       if (!mounted) {
         return;
       }
 
-      AppSnackbar.error(context, error.message);
+      AppSnackbar.error(
+        context,
+        localizeFailureMessage(context.l10n, error.message),
+      );
     }
   }
 
@@ -99,8 +107,16 @@ class _InspectionFormPageState extends State<InspectionFormPage> {
     }
 
     final state = context.read<InspectionFormCubit>().state;
-    if (state.geofenceWarning != null) {
-      AppSnackbar.info(context, state.geofenceWarning!);
+    final distance = state.distanceFromWorkOrderMeters;
+    if (distance != null &&
+        distance > InspectionGeofenceConstants.warningRadiusMeters) {
+      AppSnackbar.info(
+        context,
+        localizedGeofenceWarning(
+          context.l10n,
+          distanceMeters: distance,
+        ),
+      );
     }
   }
 
@@ -119,18 +135,24 @@ class _InspectionFormPageState extends State<InspectionFormPage> {
 
         switch (state.saveStatus) {
           case InspectionFormSaveStatus.draftSaved:
-            AppSnackbar.success(context, 'Rascunho salvo com sucesso.');
+            AppSnackbar.success(context, context.l10n.inspectionFormDraftSaved);
             context.pop();
           case InspectionFormSaveStatus.completed:
             AppSnackbar.success(
               context,
-              'Inspeção concluída e enfileirada para envio.',
+              context.l10n.inspectionFormCompletedQueued,
             );
             unawaited(context.read<SyncCubit>().refreshPendingCount());
             context.pop();
           case InspectionFormSaveStatus.failure:
             if (state.saveErrorMessage != null) {
-              AppSnackbar.error(context, state.saveErrorMessage!);
+              AppSnackbar.error(
+                context,
+                localizeFailureMessage(
+                  context.l10n,
+                  state.saveErrorMessage!,
+                ),
+              );
             }
             context.read<InspectionFormCubit>().resetSaveStatus();
           case InspectionFormSaveStatus.idle:
@@ -139,6 +161,7 @@ class _InspectionFormPageState extends State<InspectionFormPage> {
         }
       },
       builder: (context, state) {
+        final l10n = context.l10n;
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final screenBackgroundColor = isDark
             ? AppColors.backgroundCardDark
@@ -148,7 +171,9 @@ class _InspectionFormPageState extends State<InspectionFormPage> {
           backgroundColor: screenBackgroundColor,
           drawer: const WorkOrdersDrawer(),
           appBar: AppDrawerAppBar(
-            title: state.clientId == null ? 'Nova inspeção' : 'Continuar inspeção',
+            title: state.clientId == null
+                ? l10n.inspectionFormNewTitle
+                : l10n.inspectionFormContinueTitle,
             backgroundColor: screenBackgroundColor,
           ),
           body: switch (state.loadStatus) {
@@ -161,8 +186,10 @@ class _InspectionFormPageState extends State<InspectionFormPage> {
             InspectionFormLoadStatus.failure => Padding(
                 padding: EdgeInsets.all(AppSizes.cardPadding),
                 child: AppErrorState(
-                  message: state.loadErrorMessage ??
-                      'Não foi possível carregar o formulário da inspeção.',
+                  message: localizeFailureMessage(
+                    l10n,
+                    state.loadErrorMessage ?? l10n.inspectionFormLoadError,
+                  ),
                   onRetry: () => context.read<InspectionFormCubit>().load(),
                 ),
               ),
@@ -193,8 +220,8 @@ class _InspectionFormPageState extends State<InspectionFormPage> {
                     SizedBox(height: AppSizes.spacingLg),
                     AppOutlineButton(
                       label: state.isSaving
-                          ? 'Salvando...'
-                          : 'Salvar rascunho',
+                          ? l10n.inspectionFormSavingDraft
+                          : l10n.inspectionFormSaveDraft,
                       icon: Icons.save_outlined,
                       onPressed: state.isSaving
                           ? null
@@ -204,8 +231,8 @@ class _InspectionFormPageState extends State<InspectionFormPage> {
                     SizedBox(height: AppSizes.spacingSm),
                     AppElevatedButton(
                       label: state.isSaving
-                          ? 'Concluindo...'
-                          : 'Concluir inspeção',
+                          ? l10n.inspectionFormCompleting
+                          : l10n.inspectionFormComplete,
                       icon: Icons.check_circle_outline,
                       onPressed: state.isSaving
                           ? null
