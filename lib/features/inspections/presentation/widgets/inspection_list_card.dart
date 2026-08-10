@@ -1,0 +1,101 @@
+import 'package:flutter/material.dart';
+import 'package:inspetorsys/components/accent_underline_text.dart';
+import 'package:inspetorsys/components/outline_button.dart';
+import 'package:inspetorsys/components/card.dart';
+import 'package:inspetorsys/components/status_badge.dart';
+import 'package:inspetorsys/core/responsive/app_sizes.dart';
+import 'package:inspetorsys/core/utils/app_date_formatter.dart';
+import 'package:inspetorsys/features/inspections/domain/entities/local_inspection_list_item.dart';
+import 'package:inspetorsys/features/inspections/domain/enums/inspection_sync_status.dart';
+import 'package:inspetorsys/features/inspections/presentation/mappers/inspection_sync_status_mapper.dart';
+import 'package:inspetorsys/theme/app_colors.dart';
+import 'package:inspetorsys/theme/app_text_theme.dart';
+
+class InspectionListCard extends StatelessWidget {
+  const InspectionListCard({
+    super.key,
+    required this.item,
+    this.isRetrying = false,
+    this.onRetry,
+    this.onTap,
+    this.invertedSurface = false,
+  });
+
+  final LocalInspectionListItem item;
+  final bool isRetrying;
+  final VoidCallback? onRetry;
+  final VoidCallback? onTap;
+  final bool invertedSurface;
+
+  @override
+  Widget build(BuildContext context) {
+    final inspection = item.inspection;
+    final workOrderLabel = item.workOrderCode ?? inspection.workOrderId;
+    final errorMessage = inspection.syncErrorMessage?.trim();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = invertedSurface
+        ? (isDark ? AppColors.backgroundDark : AppColors.listScreenCardLight)
+        : null;
+    final borderColor = invertedSurface
+        ? (isDark ? AppColors.borderCardDark : AppColors.listScreenBorderLight)
+        : null;
+
+    return AppCard(
+      backgroundColor: backgroundColor,
+      borderColor: borderColor,
+      showBorder: !invertedSurface,
+      margin: EdgeInsets.only(bottom: AppSizes.spacingMd),
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: AppAccentUnderlineText(label: workOrderLabel),
+              ),
+              SizedBox(width: AppSizes.spacingSm),
+              AppStatusBadge(status: inspection.status.badgeStatus),
+            ],
+          ),
+          if (item.workOrderTitle != null) ...[
+            SizedBox(height: AppSizes.spacingXs),
+            Text(
+              item.workOrderTitle!,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ],
+          SizedBox(height: AppSizes.spacingXs),
+          Text(
+            AppDateFormatter.formatDateTime(inspection.updatedAt),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          if (inspection.status == InspectionSyncStatus.failed &&
+              errorMessage != null &&
+              errorMessage.isNotEmpty) ...[
+            SizedBox(height: AppSizes.spacingSm),
+            Text(
+              errorMessage,
+              style: AppTextTheme.error,
+            ),
+          ],
+          if (inspection.status == InspectionSyncStatus.failed &&
+              onRetry != null) ...[
+            SizedBox(height: AppSizes.spacingSm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: AppOutlineButton(
+                label: 'Tentar novamente',
+                icon: Icons.refresh,
+                expand: false,
+                enabled: !isRetrying,
+                onPressed: isRetrying ? null : onRetry,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

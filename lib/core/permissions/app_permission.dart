@@ -1,0 +1,4 @@
+enum AppPermission {
+  camera,
+  location,
+}
