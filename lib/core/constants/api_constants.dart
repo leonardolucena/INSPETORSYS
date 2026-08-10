@@ -18,4 +18,6 @@ abstract final class ApiConstants {
       '/work-orders/$id/form-schema';
 
   static const String inspectionsPath = '/inspections';
+
+  static String inspectionByIdPath(String id) => '/inspections/$id';
 }

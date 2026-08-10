@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:inspetorsys/components/app_drawer_app_bar_leading.dart';
 import 'package:inspetorsys/components/states/app_empty_state.dart';
 import 'package:inspetorsys/components/states/app_error_state.dart';
+import 'package:inspetorsys/components/work_order_code_search_field.dart';
 import 'package:inspetorsys/core/feedback/app_snackbar.dart';
 import 'package:inspetorsys/core/locale/l10n_extensions.dart';
 import 'package:inspetorsys/core/locale/localized_labels.dart';
@@ -22,7 +23,7 @@ import 'package:inspetorsys/features/sync/presentation/cubit/sync_cubit.dart';
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_state.dart';
 import 'package:inspetorsys/features/work_orders/presentation/widgets/work_orders_drawer.dart';
 import 'package:inspetorsys/l10n/app_localizations.dart';
-import 'package:inspetorsys/theme/app_colors.dart';
+import 'package:inspetorsys/theme/app_surface_colors.dart';
 
 class InspectionsListPage extends StatefulWidget {
   const InspectionsListPage({super.key});
@@ -32,15 +33,24 @@ class InspectionsListPage extends StatefulWidget {
 }
 
 class _InspectionsListPageState extends State<InspectionsListPage> {
+  late final TextEditingController _codeSearchController;
+
   @override
   void initState() {
     super.initState();
+    _codeSearchController = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
       context.read<InspectionsListCubit>().load();
     });
+  }
+
+  @override
+  void dispose() {
+    _codeSearchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -84,10 +94,7 @@ class _InspectionsListPageState extends State<InspectionsListPage> {
       child: BlocBuilder<InspectionsListCubit, InspectionsListState>(
         builder: (context, state) {
           final l10n = context.l10n;
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          final listBackgroundColor = isDark
-              ? AppColors.backgroundCardDark
-              : AppColors.listScreenBackgroundLight;
+          final listBackgroundColor = AppSurfaceColors.screenBackground(context);
 
           return Scaffold(
             backgroundColor: listBackgroundColor,
@@ -110,6 +117,19 @@ class _InspectionsListPageState extends State<InspectionsListPage> {
                     selectedStatus: state.statusFilter,
                     onStatusSelected:
                         context.read<InspectionsListCubit>().setStatusFilter,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSizes.cardPadding,
+                    0,
+                    AppSizes.cardPadding,
+                    AppSizes.spacingSm,
+                  ),
+                  child: WorkOrderCodeSearchField(
+                    controller: _codeSearchController,
+                    onChanged:
+                        context.read<InspectionsListCubit>().setCodeSearchQuery,
                   ),
                 ),
                 Expanded(child: _buildBody(context, state, l10n)),
@@ -154,13 +174,22 @@ class _InspectionsListPageState extends State<InspectionsListPage> {
             onAction: () => context.read<InspectionsListCubit>().refresh(),
           ),
         ),
-      InspectionsListStatus.success => RefreshIndicator(
+      InspectionsListStatus.success =>
+        state.visibleInspections.isEmpty && state.hasActiveCodeSearch
+            ? Padding(
+                padding: EdgeInsets.all(AppSizes.cardPadding),
+                child: AppEmptyState(
+                  title: l10n.inspectionsEmptyTitle,
+                  message: l10n.inspectionsEmptyMessageSearch,
+                ),
+              )
+            : RefreshIndicator(
           onRefresh: () => context.read<InspectionsListCubit>().refresh(),
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.all(AppSizes.cardPadding),
             children: [
-              for (final item in state.inspections)
+              for (final item in state.visibleInspections)
                 InspectionListCard(
                   item: item,
                   invertedSurface: true,
@@ -187,12 +216,14 @@ class _InspectionsListPageState extends State<InspectionsListPage> {
     final inspection = item.inspection;
     final status = inspection.status;
 
+    if (status == InspectionSyncStatus.synced ||
+        status == InspectionSyncStatus.pending) {
+      await context.push(AppRoutes.inspectionDetailPath(inspection.clientId));
+      return;
+    }
+
     if (status != InspectionSyncStatus.draft &&
         status != InspectionSyncStatus.failed) {
-      AppSnackbar.info(
-        context,
-        context.l10n.inspectionNotEditable,
-      );
       return;
     }
 

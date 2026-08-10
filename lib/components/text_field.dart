@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
 import 'package:inspetorsys/theme/app_colors.dart';
+import 'package:inspetorsys/theme/app_surface_colors.dart';
 import 'package:inspetorsys/theme/app_text_theme.dart';
 
 class AppTextField extends StatelessWidget {
@@ -25,6 +26,7 @@ class AppTextField extends StatelessWidget {
     this.hintText,
     this.minLines,
     this.reserveErrorSpace = true,
+    this.maintainBorderOnFocus = false,
   });
 
   final TextEditingController? controller;
@@ -34,6 +36,7 @@ class AppTextField extends StatelessWidget {
   final String? hintText;
   final int? minLines;
   final bool reserveErrorSpace;
+  final bool maintainBorderOnFocus;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final TextInputType? keyboardType;
@@ -54,15 +57,9 @@ class AppTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final fillColor =
-        isDark ? AppColors.backgroundCardDark : AppColors.backgroundCardLight;
-    final enabledBorderColor = isDark
-        ? AppColors.borderCardDark
-        : AppColors.primaryTextColorLight.withValues(alpha: 0.3);
-    final labelColor = isDark
-        ? AppColors.primaryTextColorDark
-        : AppColors.primaryTextColorLight;
+    final fillColor = AppSurfaceColors.cardBackground(context);
+    final enabledBorderColor = AppSurfaceColors.inputBorder(context);
+    final labelColor = colorScheme.onSurface;
     final borderColor = _hasError ? AppColors.borderError : enabledBorderColor;
     final focusedBorderColor =
         _hasError ? AppColors.borderError : colorScheme.primary;
@@ -128,10 +125,12 @@ class AppTextField extends StatelessWidget {
                   color: _hasError ? AppColors.borderError : labelColor,
                 ),
             enabledBorder: border,
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-              borderSide: BorderSide(color: focusedBorderColor, width: 2),
-            ),
+            focusedBorder: maintainBorderOnFocus
+                ? border
+                : OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.borderRadius),
+                    borderSide: BorderSide(color: focusedBorderColor, width: 2),
+                  ),
             disabledBorder: border,
             border: border,
             suffixIcon: suffix,

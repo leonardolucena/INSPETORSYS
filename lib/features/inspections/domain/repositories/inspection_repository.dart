@@ -9,6 +9,15 @@ abstract interface class InspectionRepository {
 
   AppAsyncResult<Inspection> completeInspection(SaveInspectionInput input);
 
+  Future<List<LocalInspectionListItem>> getCachedInspections({
+    InspectionSyncStatus? status,
+  });
+
+  AppAsyncResult<List<LocalInspectionListItem>> getInspections({
+    InspectionSyncStatus? status,
+    bool forceRefresh = false,
+  });
+
   AppAsyncResult<List<LocalInspectionListItem>> getLocalInspections({
     InspectionSyncStatus? status,
   });
@@ -17,5 +26,9 @@ abstract interface class InspectionRepository {
 
   AppAsyncResult<Inspection> retryFailedInspection(String clientId);
 
+  Future<Inspection?> getCachedInspectionByClientId(String clientId);
+
   AppAsyncResult<Inspection> getLocalInspectionByClientId(String clientId);
+
+  AppAsyncResult<Inspection> getInspectionByClientId(String clientId);
 }

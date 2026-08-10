@@ -4,6 +4,7 @@ abstract final class AppRoutes {
   static const home = '/home';
   static const workOrderDetail = '/work-orders/:id';
   static const inspectionForm = '/work-orders/:workOrderId/inspection';
+  static const inspectionDetail = '/inspections/:clientId';
   static const inspectionsHistory = '/inspections';
 
   static String workOrderDetailPath(String id) => '/work-orders/$id';
@@ -26,4 +27,7 @@ abstract final class AppRoutes {
       queryParameters: queryParameters.isEmpty ? null : queryParameters,
     ).toString();
   }
+
+  static String inspectionDetailPath(String clientId) =>
+      '/inspections/$clientId';
 }

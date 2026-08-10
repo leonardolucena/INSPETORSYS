@@ -27,6 +27,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get drawerLanguage => 'Language';
 
   @override
+  String get drawerHighContrast => 'High contrast';
+
+  @override
   String get drawerDarkMode => 'Dark mode';
 
   @override
@@ -78,6 +81,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get workOrdersEmptyMessageFiltered =>
       'No work orders match the selected filter.';
+
+  @override
+  String get workOrdersEmptyMessageSearch => 'No work order matches this code.';
+
+  @override
+  String get searchByWorkOrderCodePlaceholder => 'Search by work order code';
 
   @override
   String get refreshAction => 'Refresh';
@@ -151,8 +160,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'No inspections match the selected status.';
 
   @override
+  String get inspectionsEmptyMessageSearch =>
+      'No inspection matches this work order code.';
+
+  @override
   String get inspectionNotEditable =>
       'This inspection is already completed and cannot be edited.';
+
+  @override
+  String get inspectionDetailTitle => 'Inspection details';
+
+  @override
+  String get inspectionDetailLoadError => 'Could not load inspection details.';
+
+  @override
+  String get inspectionDetailCreatedAtLabel => 'Created at';
+
+  @override
+  String get inspectionDetailUpdatedAtLabel => 'Updated at';
+
+  @override
+  String get inspectionDetailSyncedAtLabel => 'Sent at';
+
+  @override
+  String get inspectionDetailEmptyValue => '—';
 
   @override
   String get inspectionRetryQueued => 'Inspection queued for sync again.';
@@ -171,6 +202,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncStatusFailed => 'Failed';
+
+  @override
+  String get inspectionRemoteSyncSynced => 'Synced';
+
+  @override
+  String get inspectionRemoteSyncNotSynced => 'Not synced';
 
   @override
   String get inspectionFormNewTitle => 'New inspection';

@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inspetorsys/core/connectivity/network_monitor.dart';
 import 'package:inspetorsys/core/database/app_database.dart';
 import 'package:inspetorsys/core/utils/app_uuid_generator.dart';
 import 'package:inspetorsys/features/inspections/data/datasources/inspection_local_data_source_impl.dart';
+import 'package:inspetorsys/features/inspections/data/datasources/inspection_remote_data_source.dart';
 import 'package:inspetorsys/features/inspections/data/datasources/sync_queue_local_data_source_impl.dart';
 import 'package:inspetorsys/features/inspections/data/repositories/inspection_repository_impl.dart';
 import 'package:inspetorsys/features/inspections/domain/entities/inspection.dart';
@@ -14,12 +16,20 @@ import 'package:inspetorsys/features/inspections/domain/entities/save_inspection
 import 'package:inspetorsys/features/inspections/domain/enums/inspection_condition.dart';
 import 'package:inspetorsys/features/inspections/domain/enums/inspection_form_field_type.dart';
 import 'package:inspetorsys/features/inspections/domain/enums/inspection_sync_status.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockInspectionRemoteDataSource extends Mock
+    implements InspectionRemoteDataSource {}
+
+class MockNetworkMonitor extends Mock implements NetworkMonitor {}
 
 void main() {
   late File databaseFile;
   late AppDatabase database;
   late InspectionLocalDataSourceImpl inspectionLocalDataSource;
   late SyncQueueLocalDataSourceImpl syncQueueLocalDataSource;
+  late MockInspectionRemoteDataSource remoteDataSource;
+  late MockNetworkMonitor networkMonitor;
   late InspectionRepositoryImpl repository;
 
   const testFormSchema = InspectionFormSchema(
@@ -65,10 +75,16 @@ void main() {
     database = await openDatabase();
     inspectionLocalDataSource = InspectionLocalDataSourceImpl(database);
     syncQueueLocalDataSource = SyncQueueLocalDataSourceImpl(database);
+    remoteDataSource = MockInspectionRemoteDataSource();
+    networkMonitor = MockNetworkMonitor();
+    when(() => networkMonitor.hasInternetAccess()).thenAnswer((_) async => false);
+    when(() => remoteDataSource.fetchInspections()).thenAnswer((_) async => []);
     repository = InspectionRepositoryImpl(
       inspectionLocalDataSource,
+      remoteDataSource,
       syncQueueLocalDataSource,
       WorkOrderLocalDataSourceImpl(database),
+      networkMonitor,
       const AppUuidGenerator(),
     );
   });

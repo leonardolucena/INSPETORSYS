@@ -1,8 +1,12 @@
+import 'package:inspetorsys/core/connectivity/network_monitor.dart';
 import 'package:inspetorsys/core/errors/app_failure.dart';
 import 'package:inspetorsys/core/errors/app_result.dart';
+import 'package:inspetorsys/core/image/inspection_photo_resolver.dart';
 import 'package:inspetorsys/core/utils/uuid_generator.dart';
 import 'package:inspetorsys/features/inspections/data/datasources/inspection_local_data_source.dart';
+import 'package:inspetorsys/features/inspections/data/datasources/inspection_remote_data_source.dart';
 import 'package:inspetorsys/features/inspections/data/datasources/sync_queue_local_data_source.dart';
+import 'package:inspetorsys/features/inspections/data/dto/inspection_dto.dart';
 import 'package:inspetorsys/features/inspections/domain/entities/inspection.dart';
 import 'package:inspetorsys/features/inspections/domain/entities/inspection_form_data.dart';
 import 'package:inspetorsys/features/inspections/domain/entities/local_inspection_list_item.dart';
@@ -17,14 +21,18 @@ import 'package:injectable/injectable.dart';
 class InspectionRepositoryImpl implements InspectionRepository {
   InspectionRepositoryImpl(
     this._localDataSource,
+    this._remoteDataSource,
     this._syncQueueLocalDataSource,
     this._workOrderLocalDataSource,
+    this._networkMonitor,
     this._uuidGenerator,
   );
 
   final InspectionLocalDataSource _localDataSource;
+  final InspectionRemoteDataSource _remoteDataSource;
   final SyncQueueLocalDataSource _syncQueueLocalDataSource;
   final WorkOrderLocalDataSource _workOrderLocalDataSource;
+  final NetworkMonitor _networkMonitor;
   final UuidGenerator _uuidGenerator;
 
   @override
@@ -130,6 +138,95 @@ class InspectionRepositoryImpl implements InspectionRepository {
   }
 
   @override
+  Future<List<LocalInspectionListItem>> getCachedInspections({
+    InspectionSyncStatus? status,
+  }) async {
+    final inspections = await _localDataSource.list(status: status);
+    return Future.wait(inspections.map(_mapToListItem));
+  }
+
+  @override
+  AppAsyncResult<List<LocalInspectionListItem>> getInspections({
+    InspectionSyncStatus? status,
+    bool forceRefresh = false,
+  }) async {
+    try {
+      final hasInternet = await _networkMonitor.hasInternetAccess();
+
+      if (!hasInternet) {
+        final cached = await getCachedInspections(status: status);
+        if (cached.isNotEmpty) {
+          return appSuccess(cached);
+        }
+
+        return appFailure(const NetworkFailure());
+      }
+
+      try {
+        final remoteItems = await _remoteDataSource.fetchInspections();
+        await _mergeRemoteInspections(remoteItems);
+      } on AppFailure catch (failure) {
+        final cached = await getCachedInspections(status: status);
+        if (cached.isNotEmpty) {
+          return appSuccess(cached);
+        }
+
+        return appFailure(failure);
+      }
+
+      final cached = await getCachedInspections(status: status);
+      return appSuccess(cached);
+    } on AppFailure catch (failure) {
+      return appFailure(failure);
+    } catch (_) {
+      return appFailure(const UnknownFailure());
+    }
+  }
+
+  Future<void> _mergeRemoteInspections(List<InspectionDto> remoteItems) async {
+    for (final dto in remoteItems) {
+      await _mergeRemoteInspection(dto);
+    }
+  }
+
+  Future<void> _mergeRemoteInspection(InspectionDto dto) async {
+    final existing = await _localDataSource.getByClientId(dto.clientId);
+
+    if (existing != null && _isLocalOnlyStatus(existing.status)) {
+      return;
+    }
+
+    final workOrder =
+        await _workOrderLocalDataSource.getWorkOrderById(dto.workOrderId);
+
+    final photoPath = resolveInspectionPhotoPathForPersistence(
+      localPhotoPath: existing?.photoPath,
+      remotePhotoUrl: dto.photoUrl,
+    );
+
+    final inspection = dto
+        .toDomain(
+          status: InspectionSyncStatus.synced,
+          photoPath: photoPath,
+        )
+        .copyWith(
+          workOrderCode: workOrder?.code ?? existing?.workOrderCode,
+          workOrderLatitude:
+              workOrder?.latitude ?? existing?.workOrderLatitude,
+          workOrderLongitude:
+              workOrder?.longitude ?? existing?.workOrderLongitude,
+          formSchema: existing?.formSchema,
+        );
+
+    await _localDataSource.upsert(inspection);
+  }
+
+  bool _isLocalOnlyStatus(InspectionSyncStatus status) =>
+      status == InspectionSyncStatus.draft ||
+      status == InspectionSyncStatus.pending ||
+      status == InspectionSyncStatus.failed;
+
+  @override
   AppAsyncResult<List<LocalInspectionListItem>> getLocalInspections({
     InspectionSyncStatus? status,
   }) async {
@@ -165,6 +262,58 @@ class InspectionRepositoryImpl implements InspectionRepository {
       return appSuccess(count);
     } catch (_) {
       return appFailure(const CacheFailure());
+    }
+  }
+
+  @override
+  Future<Inspection?> getCachedInspectionByClientId(String clientId) async {
+    try {
+      return await _localDataSource.getByClientId(clientId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  AppAsyncResult<Inspection> getInspectionByClientId(String clientId) async {
+    try {
+      final hasInternet = await _networkMonitor.hasInternetAccess();
+
+      if (!hasInternet) {
+        final cached = await _localDataSource.getByClientId(clientId);
+        if (cached != null) {
+          return appSuccess(cached);
+        }
+
+        return appFailure(const NetworkFailure());
+      }
+
+      try {
+        final remoteItem = await _remoteDataSource.fetchInspectionById(clientId);
+        await _mergeRemoteInspection(remoteItem);
+
+        final inspection = await _localDataSource.getByClientId(clientId);
+        if (inspection != null) {
+          return appSuccess(inspection);
+        }
+
+        return appFailure(
+          const ValidationFailure(
+            message: 'Inspeção não encontrada neste dispositivo.',
+          ),
+        );
+      } on AppFailure catch (failure) {
+        final cached = await _localDataSource.getByClientId(clientId);
+        if (cached != null) {
+          return appSuccess(cached);
+        }
+
+        return appFailure(failure);
+      }
+    } on AppFailure catch (failure) {
+      return appFailure(failure);
+    } catch (_) {
+      return appFailure(const UnknownFailure());
     }
   }
 

@@ -398,24 +398,10 @@ _MapControlChrome _resolveMapControlChrome(
   BuildContext context, {
   Color? customIconColor,
 }) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  final useLightChrome = customIconColor != null;
-
-  if (useLightChrome) {
-    return _MapControlChrome(
-      backgroundColor: AppColors.backgroundCardLight,
-      borderColor: AppColors.listScreenBorderLight,
-      iconColor: customIconColor,
-    );
-  }
-
   return _MapControlChrome(
-    backgroundColor:
-        isDark ? AppColors.backgroundCardDark : AppColors.backgroundCardLight,
-    borderColor: isDark
-        ? AppColors.borderCardDark
-        : AppColors.primaryTextColorLight.withValues(alpha: 0.15),
-    iconColor: Theme.of(context).colorScheme.primary,
+    backgroundColor: AppColors.mapControlBackground,
+    borderColor: AppColors.mapControlBorder,
+    iconColor: customIconColor ?? AppColors.mapControlIcon,
   );
 }
 

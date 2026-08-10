@@ -44,6 +44,54 @@ void main() {
     return inspection.copyWith(photoPath: fixturePhoto.path);
   }
 
+  test('fetchInspections returns parsed inspection list', () async {
+    dioHelper.mockGet(
+      path: '/inspections',
+      responseData: [
+        {
+          'id': 'insp_1',
+          'clientId': clientId,
+          'workOrderId': 'wo_1001',
+          'observation': 'Inspeção remota',
+          'photoUrl': '/uploads/photo.jpg',
+          'latitude': -7.1195,
+          'longitude': -34.845,
+          'capturedAt': '2026-07-26T12:00:00.000Z',
+          'syncedAt': '2026-07-26T13:00:00.000Z',
+        },
+      ],
+    );
+
+    final result = await dataSource.fetchInspections();
+
+    expect(result, hasLength(1));
+    expect(result.single.clientId, clientId);
+    expect(dioHelper.capturedGetRequests.single.path, '/inspections');
+  });
+
+  test('fetchInspectionById returns parsed inspection', () async {
+    dioHelper.mockGetObject(
+      path: '/inspections/$clientId',
+      responseData: {
+        'id': 'insp_1',
+        'clientId': clientId,
+        'workOrderId': 'wo_1001',
+        'observation': 'Inspeção remota',
+        'photoUrl': '/uploads/photo.jpg',
+        'latitude': -7.1195,
+        'longitude': -34.845,
+        'capturedAt': '2026-07-26T12:00:00.000Z',
+        'syncedAt': '2026-07-26T13:00:00.000Z',
+      },
+    );
+
+    final result = await dataSource.fetchInspectionById(clientId);
+
+    expect(result.clientId, clientId);
+    expect(result.id, 'insp_1');
+    expect(dioHelper.capturedGetRequests.single.path, '/inspections/$clientId');
+  });
+
   test('uploads inspection as multipart form data with clientId', () async {
     dioHelper.mockPost(
       path: '/inspections',

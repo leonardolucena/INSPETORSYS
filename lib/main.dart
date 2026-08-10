@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:inspetorsys/core/di/injection.dart';
 import 'package:inspetorsys/core/locale/presentation/cubit/locale_cubit.dart';
 import 'package:inspetorsys/core/maps/map_tile_cache_service.dart';
+import 'package:inspetorsys/core/notifications/notification_service.dart';
 import 'package:inspetorsys/core/router/app_router.dart';
 import 'package:inspetorsys/core/sync/background_sync_scheduler.dart';
 import 'package:inspetorsys/core/utils/app_date_formatter.dart';
@@ -15,6 +16,7 @@ import 'package:inspetorsys/features/auth/presentation/cubit/auth_session_cubit.
 import 'package:inspetorsys/features/auth/presentation/cubit/auth_session_state.dart';
 import 'package:inspetorsys/features/auth/presentation/cubit/current_user_cubit.dart';
 import 'package:inspetorsys/core/feedback/app_snackbar.dart';
+import 'package:inspetorsys/core/theme/presentation/cubit/high_contrast_cubit.dart';
 import 'package:inspetorsys/core/theme/presentation/cubit/theme_cubit.dart';
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_cubit.dart';
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_state.dart';
@@ -29,6 +31,7 @@ Future<void> main() async {
   await AppDateFormatter.initialize();
   await BackgroundSyncScheduler.initialize();
   await configureDependencies();
+  await getIt<NotificationService>().initialize();
   await getIt<MapTileCacheService>().initialize();
 
   final authSessionCubit = getIt<AuthSessionCubit>();
@@ -36,8 +39,10 @@ Future<void> main() async {
   final connectionStatusCubit = getIt<ConnectionStatusCubit>();
   final currentUserCubit = getIt<CurrentUserCubit>();
   final themeCubit = getIt<ThemeCubit>();
+  final highContrastCubit = getIt<HighContrastCubit>();
   final localeCubit = getIt<LocaleCubit>();
   await themeCubit.load();
+  await highContrastCubit.load();
   await localeCubit.load();
 
   final router = getIt<AppRouter>().router;
@@ -59,6 +64,7 @@ Future<void> main() async {
       connectionStatusCubit: connectionStatusCubit,
       currentUserCubit: currentUserCubit,
       themeCubit: themeCubit,
+      highContrastCubit: highContrastCubit,
       localeCubit: localeCubit,
     ),
   );
@@ -98,6 +104,7 @@ void _handleAuthSessionChange(
     connectionStatusCubit.startMonitoring();
     unawaited(currentUserCubit.load());
     unawaited(getIt<PrefetchWorkOrdersUseCase>()());
+    unawaited(getIt<NotificationService>().requestPermissionIfNeeded());
     unawaited(BackgroundSyncScheduler.registerPeriodicSync());
     Future<void>.delayed(const Duration(seconds: 2), () {
       syncCubit.startAutoSync();
@@ -119,6 +126,7 @@ class MyApp extends StatelessWidget {
     required this.connectionStatusCubit,
     required this.currentUserCubit,
     required this.themeCubit,
+    required this.highContrastCubit,
     required this.localeCubit,
   });
 
@@ -128,6 +136,7 @@ class MyApp extends StatelessWidget {
   final ConnectionStatusCubit connectionStatusCubit;
   final CurrentUserCubit currentUserCubit;
   final ThemeCubit themeCubit;
+  final HighContrastCubit highContrastCubit;
   final LocaleCubit localeCubit;
 
   @override
@@ -141,6 +150,7 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<CurrentUserCubit>.value(value: currentUserCubit),
         BlocProvider<ThemeCubit>.value(value: themeCubit),
+        BlocProvider<HighContrastCubit>.value(value: highContrastCubit),
         BlocProvider<LocaleCubit>.value(value: localeCubit),
       ],
       child: ResponsiveSizer(
@@ -149,12 +159,20 @@ class MyApp extends StatelessWidget {
             builder: (context, locale) {
               return BlocBuilder<ThemeCubit, ThemeMode>(
                 builder: (context, themeMode) {
-                  return MaterialApp.router(
-                    title: 'InspetorSYS',
-                    debugShowCheckedModeBanner: false,
-                    theme: AppTheme.lightTheme,
-                    darkTheme: AppTheme.darkTheme,
-                    themeMode: themeMode,
+                  return BlocBuilder<HighContrastCubit, bool>(
+                    builder: (context, highContrast) {
+                      return MaterialApp.router(
+                        title: 'InspetorSYS',
+                        debugShowCheckedModeBanner: false,
+                        theme: AppTheme.resolveTheme(
+                          themeMode: ThemeMode.light,
+                          highContrast: highContrast,
+                        ),
+                        darkTheme: AppTheme.resolveTheme(
+                          themeMode: ThemeMode.dark,
+                          highContrast: highContrast,
+                        ),
+                        themeMode: themeMode,
                     locale: locale,
                     localizationsDelegates: const [
                       AppLocalizations.delegate,
@@ -197,6 +215,8 @@ class MyApp extends StatelessWidget {
                         },
                         child: child ?? const SizedBox.shrink(),
                       );
+                    },
+                  );
                     },
                   );
                 },

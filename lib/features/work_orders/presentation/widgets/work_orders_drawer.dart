@@ -9,6 +9,7 @@ import 'package:inspetorsys/core/connectivity/presentation/cubit/connection_stat
 import 'package:inspetorsys/components/switch.dart';
 import 'package:inspetorsys/core/locale/l10n_extensions.dart';
 import 'package:inspetorsys/core/locale/presentation/cubit/locale_cubit.dart';
+import 'package:inspetorsys/core/theme/presentation/cubit/high_contrast_cubit.dart';
 import 'package:inspetorsys/core/theme/presentation/cubit/theme_cubit.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
 import 'package:inspetorsys/core/router/app_routes.dart';
@@ -19,6 +20,7 @@ import 'package:inspetorsys/features/auth/presentation/cubit/current_user_state.
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_cubit.dart';
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_state.dart';
 import 'package:inspetorsys/theme/app_colors.dart';
+import 'package:inspetorsys/theme/app_surface_colors.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
 class WorkOrdersDrawer extends StatelessWidget {
@@ -47,10 +49,7 @@ class WorkOrdersDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final drawerBackgroundColor = isDark
-        ? AppColors.backgroundCardDark
-        : AppColors.backgroundCardLight;
+    final drawerBackgroundColor = AppSurfaceColors.cardBackground(context);
 
     return Drawer(
       width: 78.w,
@@ -117,6 +116,17 @@ class WorkOrdersDrawer extends StatelessWidget {
                 },
               ),
               const Spacer(),
+              BlocBuilder<HighContrastCubit, bool>(
+                builder: (context, highContrastEnabled) {
+                  return _DrawerHighContrastToggle(
+                    isEnabled: highContrastEnabled,
+                    onChanged: (enabled) => context
+                        .read<HighContrastCubit>()
+                        .setEnabled(enabled),
+                  );
+                },
+              ),
+              SizedBox(height: AppSizes.spacingMd),
               BlocBuilder<LocaleCubit, Locale>(
                 builder: (context, locale) {
                   return _DrawerLanguageSelector(
@@ -211,6 +221,74 @@ class _DrawerMenuItem extends StatelessWidget {
   }
 }
 
+class _DrawerHighContrastToggle extends StatelessWidget {
+  const _DrawerHighContrastToggle({
+    required this.isEnabled,
+    required this.onChanged,
+  });
+
+  final bool isEnabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DrawerSettingsCard(
+      icon: Icons.contrast_outlined,
+      label: context.l10n.drawerHighContrast,
+      trailing: AppSwitch(
+        value: isEnabled,
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+class _DrawerSettingsCard extends StatelessWidget {
+  const _DrawerSettingsCard({
+    required this.icon,
+    required this.label,
+    required this.trailing,
+  });
+
+  final IconData icon;
+  final String label;
+  final Widget trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSizes.spacingSm,
+        vertical: AppSizes.spacingSm,
+      ),
+      decoration: BoxDecoration(
+        color: AppSurfaceColors.elevatedSurface(context),
+        borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+        border: Border.all(color: AppSurfaceColors.cardBorder(context)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: AppSizes.iconMd,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          SizedBox(width: AppSizes.spacingMd),
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
+          trailing,
+        ],
+      ),
+    );
+  }
+}
+
 class _DrawerLanguageSelector extends StatelessWidget {
   const _DrawerLanguageSelector({
     required this.selectedLocale,
@@ -223,12 +301,6 @@ class _DrawerLanguageSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBackgroundColor =
-        isDark ? AppColors.backgroundDark : AppColors.listScreenCardLight;
-    final borderColor = isDark
-        ? AppColors.borderCardDark
-        : AppColors.listScreenBorderLight;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -236,9 +308,9 @@ class _DrawerLanguageSelector extends StatelessWidget {
         vertical: AppSizes.spacingSm,
       ),
       decoration: BoxDecoration(
-        color: cardBackgroundColor,
+        color: AppSurfaceColors.elevatedSurface(context),
         borderRadius: BorderRadius.circular(AppSizes.cardRadius),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: AppSurfaceColors.cardBorder(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -293,45 +365,12 @@ class _DrawerThemeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBackgroundColor =
-        isDark ? AppColors.backgroundDark : AppColors.listScreenCardLight;
-    final borderColor = isDark
-        ? AppColors.borderCardDark
-        : AppColors.listScreenBorderLight;
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSizes.spacingSm,
-        vertical: AppSizes.spacingSm,
-      ),
-      decoration: BoxDecoration(
-        color: cardBackgroundColor,
-        borderRadius: BorderRadius.circular(AppSizes.cardRadius),
-        border: Border.all(color: borderColor),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isDarkMode ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-            size: AppSizes.iconMd,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          SizedBox(width: AppSizes.spacingMd),
-          Expanded(
-            child: Text(
-              l10n.drawerDarkMode,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ),
-          AppSwitch(
-            value: isDarkMode,
-            onChanged: onChanged,
-          ),
-        ],
+    return _DrawerSettingsCard(
+      icon: isDarkMode ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+      label: context.l10n.drawerDarkMode,
+      trailing: AppSwitch(
+        value: isDarkMode,
+        onChanged: onChanged,
       ),
     );
   }
@@ -352,22 +391,15 @@ class _DrawerProfileSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBackgroundColor =
-        isDark ? AppColors.backgroundDark : AppColors.listScreenCardLight;
-    final borderColor = isDark
-        ? AppColors.borderCardDark
-        : AppColors.listScreenBorderLight;
-
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppSizes.spacingSm,
         vertical: AppSizes.spacingMd,
       ),
       decoration: BoxDecoration(
-        color: cardBackgroundColor,
+        color: AppSurfaceColors.elevatedSurface(context),
         borderRadius: BorderRadius.circular(AppSizes.cardRadius),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: AppSurfaceColors.cardBorder(context)),
       ),
       child: isLoading
           ? Center(

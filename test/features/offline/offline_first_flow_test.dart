@@ -6,6 +6,7 @@ import 'package:inspetorsys/core/database/app_database.dart';
 import 'package:inspetorsys/core/utils/app_uuid_generator.dart';
 import 'package:inspetorsys/features/inspections/data/datasources/drift_inspection_form_schema_cache_data_source.dart';
 import 'package:inspetorsys/features/inspections/data/datasources/inspection_local_data_source_impl.dart';
+import 'package:inspetorsys/features/inspections/data/datasources/inspection_remote_data_source.dart';
 import 'package:inspetorsys/features/inspections/data/datasources/sync_queue_local_data_source_impl.dart';
 import 'package:inspetorsys/features/inspections/data/dto/inspection_form_schema_dto.dart';
 import 'package:inspetorsys/features/inspections/data/repositories/inspection_repository_impl.dart';
@@ -26,12 +27,16 @@ import 'package:inspetorsys/features/work_orders/data/datasources/work_order_rem
 class MockWorkOrderRemoteDataSource extends Mock
     implements WorkOrderRemoteDataSource {}
 
+class MockInspectionRemoteDataSource extends Mock
+    implements InspectionRemoteDataSource {}
+
 class MockNetworkMonitor extends Mock implements NetworkMonitor {}
 
 void main() {
   late File databaseFile;
   late AppDatabase database;
   late MockWorkOrderRemoteDataSource remoteDataSource;
+  late MockInspectionRemoteDataSource inspectionRemoteDataSource;
   late MockNetworkMonitor networkMonitor;
   late WorkOrderRepositoryImpl workOrderRepository;
   late InspectionRepositoryImpl inspectionRepository;
@@ -90,8 +95,11 @@ void main() {
     database = AppDatabase.forTesting(NativeDatabase(databaseFile));
 
     remoteDataSource = MockWorkOrderRemoteDataSource();
+    inspectionRemoteDataSource = MockInspectionRemoteDataSource();
     networkMonitor = MockNetworkMonitor();
     when(() => networkMonitor.hasInternetAccess()).thenAnswer((_) async => false);
+    when(() => inspectionRemoteDataSource.fetchInspections())
+        .thenAnswer((_) async => []);
 
     final workOrderLocalDataSource = WorkOrderLocalDataSourceImpl(database);
     schemaCacheDataSource = DriftInspectionFormSchemaCacheDataSource(database);
@@ -105,8 +113,10 @@ void main() {
 
     inspectionRepository = InspectionRepositoryImpl(
       InspectionLocalDataSourceImpl(database),
+      inspectionRemoteDataSource,
       SyncQueueLocalDataSourceImpl(database),
       workOrderLocalDataSource,
+      networkMonitor,
       const AppUuidGenerator(),
     );
 

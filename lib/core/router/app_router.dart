@@ -10,8 +10,10 @@ import 'package:inspetorsys/features/auth/presentation/cubit/auth_session_state.
 import 'package:inspetorsys/features/auth/presentation/cubit/login_cubit.dart';
 import 'package:inspetorsys/features/auth/presentation/pages/login_page.dart';
 import 'package:inspetorsys/features/auth/presentation/pages/splash_page.dart';
+import 'package:inspetorsys/features/inspections/presentation/cubit/inspection_detail_cubit.dart';
 import 'package:inspetorsys/features/inspections/presentation/cubit/inspection_form_cubit.dart';
 import 'package:inspetorsys/features/inspections/presentation/cubit/inspections_list_cubit.dart';
+import 'package:inspetorsys/features/inspections/presentation/pages/inspection_detail_page.dart';
 import 'package:inspetorsys/features/inspections/presentation/pages/inspection_form_page.dart';
 import 'package:inspetorsys/features/inspections/presentation/pages/inspections_list_page.dart';
 import 'package:inspetorsys/features/work_orders/presentation/cubit/work_order_detail_cubit.dart';
@@ -78,6 +80,19 @@ class AppRouter {
           create: (_) => getIt<InspectionsListCubit>(),
           child: const InspectionsListPage(),
         ),
+        routes: [
+          GoRoute(
+            path: ':clientId',
+            builder: (context, state) {
+              final clientId = state.pathParameters['clientId']!;
+
+              return BlocProvider(
+                create: (_) => getIt<InspectionDetailCubit>(),
+                child: InspectionDetailPage(clientId: clientId),
+              );
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.inspectionForm,

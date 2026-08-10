@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:inspetorsys/core/di/injection.dart';
+import 'package:inspetorsys/core/notifications/notification_service.dart';
 import 'package:inspetorsys/core/sync/background_sync_constants.dart';
 import 'package:inspetorsys/features/sync/domain/usecases/sync_pending_inspections_use_case.dart';
 import 'package:workmanager/workmanager.dart';
@@ -13,7 +14,12 @@ void backgroundSyncCallbackDispatcher() {
 
     try {
       await _ensureDependenciesConfigured();
-      await getIt<SyncPendingInspectionsUseCase>()();
+      final result = await getIt<SyncPendingInspectionsUseCase>()();
+
+      if (result.synced > 0 || result.markedFailed > 0) {
+        await getIt<NotificationService>().showBackgroundSyncResult(result);
+      }
+
       return true;
     } catch (_) {
       return false;

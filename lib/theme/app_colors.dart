@@ -84,4 +84,24 @@ abstract final class AppColors {
   static const Color segmentControlTrackDark = Color(0xFF3A3F44);
   static const Color segmentControlBorderDark = Color(0xFF4A4F5C);
   static const Color segmentControlThumbDark = Color(0xFF4A4F55);
+
+  // High contrast — outdoor readability (sunlight)
+  static const Color hcScreenBackgroundLight = Color(0xFFFFFFFF);
+  static const Color hcCardBackgroundLight = Color(0xFFFFFFFF);
+  static const Color hcPrimaryTextLight = Color(0xFF000000);
+  static const Color hcBorderLight = Color(0xFF000000);
+  static const Color hcAccentLight = Color(0xFF000000);
+  static const Color hcOnAccentLight = Color(0xFFFFFFFF);
+
+  static const Color hcScreenBackgroundDark = Color(0xFF000000);
+  static const Color hcCardBackgroundDark = Color(0xFF000000);
+  static const Color hcPrimaryTextDark = Color(0xFFFFFFFF);
+  static const Color hcBorderDark = Color(0xFFFFFFFF);
+  static const Color hcAccentDark = Color(0xFFFFD600);
+  static const Color hcOnAccentDark = Color(0xFF000000);
+
+  // Map controls — fixed over tiles in light and dark app themes
+  static const Color mapControlBackground = Color(0xFF2C2C2C);
+  static const Color mapControlBorder = Color(0xFF3F3F3F);
+  static const Color mapControlIcon = Color(0xFFF5F5F5);
 }

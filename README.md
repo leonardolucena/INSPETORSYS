@@ -2,21 +2,113 @@
 
 App Flutter de inspeção de campo com arquitetura **offline-first** para o desafio técnico. O técnico registra inspeções (texto, foto, GPS) mesmo sem rede; os dados ficam no dispositivo e entram numa fila de sincronização com a API mock.
 
-Este README documenta as **decisões técnicas** e a **justificativa dos pacotes**, organizados pelos critérios de avaliação do desafio.
+Este README documenta **o que o app faz**, as **decisões técnicas** e a **justificativa dos pacotes**, organizados pelos critérios de avaliação do desafio.
 
 ---
 
 ## Índice
 
-1. [Como executar](#como-executar)
-2. [Arquitetura](#arquitetura)
-3. [Decisões técnicas por critério de avaliação](#decisões-técnicas-por-critério-de-avaliação)
-4. [Modelagem offline e fila de sync](#modelagem-offline-e-fila-de-sync)
-5. [Tratamento de erros e estados de UI](#tratamento-de-erros-e-estados-de-ui)
-6. [Testes](#testes)
-7. [Estrutura de pastas](#estrutura-de-pastas)
-8. [Histórico de commits](#histórico-de-commits)
-9. [Limitações conhecidas e próximos passos](#limitações-conhecidas-e-próximos-passos)
+1. [Visão geral do app](#visão-geral-do-app)
+2. [Como executar](#como-executar)
+3. [Arquitetura](#arquitetura)
+4. [Decisões técnicas por critério de avaliação](#decisões-técnicas-por-critério-de-avaliação)
+5. [Modelagem offline e fila de sync](#modelagem-offline-e-fila-de-sync)
+6. [Tratamento de erros e estados de UI](#tratamento-de-erros-e-estados-de-ui)
+7. [Testes](#testes)
+8. [Estrutura de pastas](#estrutura-de-pastas)
+9. [Evolução do desenvolvimento](#evolução-do-desenvolvimento)
+10. [Limitações conhecidas e próximos passos](#limitações-conhecidas-e-próximos-passos)
+
+---
+
+## Visão geral do app
+
+O InspetorSYS foi pensado para **inspeção de campo com rede instável ou inexistente**. O técnico lista ordens de serviço, preenche um formulário dinâmico (observação, foto, GPS, condição do ativo) e **conclui a inspeção offline**. Tudo persiste localmente no SQLite (Drift). Quando a conexão volta, uma **fila de sincronização** envia os dados para a API com retry, backoff e idempotência por `clientId`.
+
+O histórico centraliza todas as inspeções do dispositivo: filtros por status, badges de sync, reenvio de itens com falha e **tela de detalhes somente leitura** para inspeções já concluídas. Com internet, o app também faz **pull** (`GET /inspections`) para exibir inspeções já sincronizadas em outros aparelhos.
+
+### Problema que o app resolve
+
+| Cenário | Comportamento |
+|---|---|
+| Sem sinal no local da inspeção | Formulário, foto e GPS funcionam; dados salvos no Drift |
+| Técnico precisa saber se enviou | Status visível: rascunho, pendente, enviado ou falhou |
+| Rede volta depois de horas | Sync automático, manual ou em background (`workmanager`) |
+| Mesmo usuário em outro aparelho | Pull remoto + merge local no histórico |
+
+Esse contexto explica o desenho: banco relacional local, fila de outbox, indicadores na UI e sync em background.
+
+### Pilares do produto
+
+#### 1. Offline-first (não só cache)
+
+- Escritas vão **sempre** para o Drift primeiro; a API é secundária.
+- Ordens de serviço e form-schema ficam em cache — o app abre offline.
+- Conclusão offline → status `pending` + entrada na `sync_queue`.
+- Rascunhos (`draft`) nunca entram na fila de envio.
+
+Referências no código: `lib/core/database/app_database.dart`, `lib/features/inspections/data/repositories/inspection_repository_impl.dart`, `lib/features/sync/domain/services/inspection_sync_service.dart`.
+
+#### 2. Sincronização confiável
+
+- Padrão **outbox**: tabela `sync_queue` separada de `inspections`, com retry auditável.
+- **`clientId` (UUID)** gerado no device antes do `POST` — reenvio idempotente (API retorna `200` se já existir).
+- **Backoff exponencial** em falhas de rede — evita martelar a API.
+- Erros **400/409** → `failed` permanente; falhas de rede → mantém `pending`.
+- Gatilhos: rede online (`NetworkMonitor`), botão manual no drawer e `workmanager` em background (com notificação local).
+
+A sync é tratada como **engenharia de dados** (fila + máquina de estados persistida), não como um `if (connected)` no botão salvar.
+
+#### 3. Arquitetura em camadas (SOLID)
+
+```
+UI (Cubit) → UseCase → Repository (interface) → Local / Remote DataSource
+```
+
+- **Presentation** não importa Dio, Drift, Geolocator ou ImagePicker.
+- **Domain** com entidades Freezed, contratos de repositório e use cases finos.
+- **Data** implementa contratos; DTOs mapeiam para entidades via extensions.
+- **DI** com `get_it` + `injectable` — facilita testes com mocks.
+- **Navegação** com `go_router` + `AuthSessionCubit`; qualquer `401` força logout.
+
+#### 4. UX de campo
+
+- Design system próprio em `lib/components/` (sem widgets Material crus).
+- Estados explícitos: shimmer de loading, empty, error com retry.
+- Geofence de 200 m — aviso quando o técnico está longe da OS (não bloqueia).
+- Form-schema dinâmico vindo da API; validação espelhada no domain.
+- i18n PT/EN, dark mode e modo de alto contraste para uso outdoor.
+- Histórico com filtro, badge de sync (ícone) + status detalhado, detalhe read-only para enviadas/pendentes.
+
+### Fluxo ponta a ponta
+
+```mermaid
+flowchart TD
+  User[Tecnico] --> Form[Formulario_inspecao]
+  Form --> Drift[(Drift_SQLite)]
+  Form --> Queue[sync_queue]
+  Queue --> Sync[InspectionSyncService]
+  Sync -->|"POST multipart"| API[Mock_API]
+  API --> Sync
+  Sync --> Drift
+  Drift --> History[Historico]
+  API -->|"GET /inspections"| Pull[Merge_remoto]
+  Pull --> Drift
+  History --> Detail[Detalhe_read_only]
+```
+
+### Decisões de design em resumo
+
+| Escolha | Motivo |
+|---|---|
+| **Drift** em vez de Hive/Isar | Relações OS ↔ inspeção ↔ fila; SQL para filtrar por status e ordenar por data |
+| **Fotos no filesystem** | SQLite não infla; upload multipart simples; reenvio idempotente |
+| **`result_dart`** em vez de `dartz` | Erros tipados nos repositórios; API mais enxuta |
+| **Cubit** em vez de Bloc completo | Fluxos async diretos; menos boilerplate |
+| **connectivity + internet checker** | Interface ativa ≠ internet real (captive portal) |
+| **`workmanager`** | Sync com app em background — cenário comum em campo |
+| **Mock API separada** | Contrato do desafio; app não acopla à implementação do servidor |
+| **Pull + merge no histórico** | Inspeções de outro aparelho aparecem online; estados locais (`draft`/`pending`/`failed`) não são sobrescritos |
 
 ---
 
@@ -87,7 +179,6 @@ lib/
     auth/               # presentation / domain / data
     work_orders/
     inspections/
-    design_preview/     # showcase do design system (temporário)
   components/           # Design system reutilizável
   theme/
 ```
@@ -120,6 +211,7 @@ lib/
 | **`connectivity_plus`** | Detecta mudança de interface (Wi-Fi/mobile/offline) e dispara revalidação imediata. |
 | **`internet_connection_checker_plus`** | Valida **internet real** (HEAD em endpoints públicos), não só interface ativa — evita sync inútil em captive portal/Wi-Fi sem rota. Integrado via `triggerStream` do `connectivity_plus`. |
 | **`workmanager`** | Sync periódico em background (Android WorkManager / iOS Background Fetch). Complementa o sync ao voltar online no foreground; constraint `NetworkType.connected`. |
+| **`flutter_local_notifications`** | Notificação local quando a sync em background conclui (inspeções enviadas ou falhas permanentes), respeitando o idioma salvo no app. |
 
 **Por que não `dartz`/`fpdart` para sync?** O fluxo de fila usa estados persistidos (`pending` → `synced`/`failed`) e retry com backoff — modelagem relacional + máquina de estados no banco é mais auditável que encadear `Either` em memória.
 
@@ -150,7 +242,7 @@ lib/
 | **`AppErrorState`** | Erro com ação de retry. |
 | **`AppSnackbar`** | Feedback `.info()` / `.success()` / `.error()` padronizado — nunca `SnackBar` cru do Material. |
 | **`AppStatusBadge`** | Status de sync (`draft` / `pending` / `synced` / `failed`) com cores semânticas do design system. |
-| **`intl`** | Datas em `pt_BR` (`AppDateFormatter`) — consistência na listagem de OS e histórico. |
+| **`intl`** | Datas em `pt_BR`/`en` (`AppDateFormatter`) e i18n via ARB (`flutter gen-l10n`, PT/EN). |
 
 ---
 
@@ -219,7 +311,7 @@ flowchart TD
 **Gatilhos de sync:**
 1. `NetworkMonitor.onStatusChanged` → `NetworkStatus.online` (automático no foreground)
 2. Botão manual no drawer (“Sincronizar inspeções”)
-3. `workmanager` periódico (`BackgroundSyncScheduler.registerPeriodicSync`) após login
+3. `workmanager` periódico (`BackgroundSyncScheduler.registerPeriodicSync`) após login — resultado exibido em notificação local quando há itens sincronizados ou marcados como `failed`
 
 ---
 
@@ -276,13 +368,15 @@ lib/
 │   ├── router/             # go_router + guards
 │   ├── session/            # SessionTokenProvider (cache sync do token)
 │   ├── storage/            # AppPaths, SecureTokenStorage
-│   ├── sync/               # workmanager
+│   ├── sync/               # workmanager + notificações de background
+│   ├── theme/              # ThemeCubit + HighContrastCubit + preferências
+│   ├── locale/             # LocaleCubit + preferência PT/EN
 │   └── utils/              # UuidGenerator, AppDateFormatter
 ├── features/
 │   ├── auth/
 │   ├── work_orders/
-│   ├── inspections/
-│   └── design_preview/
+│   └── inspections/
+├── l10n/                   # ARB PT/EN (flutter gen-l10n)
 ├── components/             # Design system
 └── theme/
 ```
@@ -299,23 +393,21 @@ O projeto foi construído em fases incrementais, cobrindo uma camada ou feature 
 | **Autenticação** | Tela de login, `POST /auth/login`, token em `flutter_secure_storage`, validação de sessão no splash, guards de rota e logout com `401` |
 | **Ordens de serviço** | Lista com filtro, pull-to-refresh e cache Drift; detalhe da OS com mapa |
 | **Formulário de inspeção** | Observação, foto (compressão), GPS, condição, rascunho/conclusão, form-schema dinâmico e geofence de 200 m |
-| **Offline + sync** | Fila `sync_queue`, status `draft`/`pending`/`synced`/`failed`, `POST /inspections` idempotente, retry com backoff |
-| **Histórico** | Tela de inspeções locais com filtro por status, badges, retry em `failed` e indicadores de conexão/pendentes |
+| **Offline + sync** | Fila `sync_queue`, status `draft`/`pending`/`synced`/`failed`, `POST /inspections` idempotente, retry com backoff, pull `GET /inspections` |
+| **Histórico** | Filtro por status, badges de sync, retry em `failed`, detalhe read-only, pull multi-dispositivo, indicadores de conexão/pendentes |
 | **Qualidade** | Testes (repos, cubits, fluxo offline→online), `FailureMessageMapper`, CI no GitHub Actions |
-| **Polimento** | Drawer, dark mode persistido, cache offline de OS/form-schema, prefetch de tiles do mapa, ajustes de UI |
+| **Polimento** | Drawer, dark mode persistido, alto contraste outdoor, cache offline de OS/form-schema, prefetch de tiles do mapa, i18n PT/EN, notificação de sync em background |
 
 ---
 ## Limitações conhecidas e próximos passos
 
 | Item | Situação |
 |---|---|
-| Plataforma alvo | Desafio pede Android; o app também compila para iOS |
-| Edição de inspeções | Apenas rascunhos e itens com falha podem ser reabertos; inspeções `pending`/`synced` não são editáveis |
-| Layout outdoor | Dark mode e responsividade prontos; sem modo de alto contraste dedicado para uso sob sol forte |
+| Edição de inspeções | Apenas rascunhos e itens com falha podem ser reabertos; `pending`/`synced` abrem somente leitura |
+| Sync | Eventual (batch), não push instantâneo entre dispositivos — pull ao abrir/atualizar histórico |
 | Mapa | Visualização básica OSM com marcadores; sem clustering nem navegação turn-by-turn |
-| Sync em background | WorkManager registrado após login; não há notificação ao usuário quando a sync termina em segundo plano |
-| `design_preview/` | Showcase temporário do design system — pode ser removido antes da entrega final |
+| OS encerrada | Ainda permite abrir nova inspeção em OS com status `done` |
 
-**Com mais tempo:** testes de integração E2E (Patrol/integration_test); edição de inspeções já sincronizadas; notificação push ao concluir sync em background.
+**Com mais tempo:** testes de integração E2E (Patrol/integration_test); bloqueio de inspeção em OS `done`; edição versionada de inspeções já sincronizadas.
 
 ---

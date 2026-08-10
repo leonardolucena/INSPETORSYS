@@ -20,6 +20,16 @@ class CapturedPostRequest {
   FormData get formData => data! as FormData;
 }
 
+class CapturedGetRequest {
+  CapturedGetRequest({
+    required this.path,
+    required this.queryParameters,
+  });
+
+  final String path;
+  final Map<String, dynamic>? queryParameters;
+}
+
 class DioClientMockHelper {
   DioClientMockHelper() {
     _dio = MockDio();
@@ -31,8 +41,65 @@ class DioClientMockHelper {
   late final MockDioClient _dioClient;
 
   final List<CapturedPostRequest> capturedPostRequests = [];
+  final List<CapturedGetRequest> capturedGetRequests = [];
 
   MockDioClient get client => _dioClient;
+
+  void mockGet({
+    required String path,
+    required List<Map<String, dynamic>> responseData,
+    int statusCode = 200,
+    Map<String, dynamic>? queryParameters,
+  }) {
+    when(
+      () => _dio.get<List<dynamic>>(
+        any(),
+        queryParameters: any(named: 'queryParameters'),
+      ),
+    ).thenAnswer((invocation) async {
+      capturedGetRequests.add(
+        CapturedGetRequest(
+          path: invocation.positionalArguments.first as String,
+          queryParameters:
+              invocation.namedArguments[#queryParameters] as Map<String, dynamic>?,
+        ),
+      );
+
+      return Response(
+        requestOptions: RequestOptions(path: path),
+        data: responseData,
+        statusCode: statusCode,
+      );
+    });
+  }
+
+  void mockGetObject({
+    required String path,
+    required Map<String, dynamic> responseData,
+    int statusCode = 200,
+    Map<String, dynamic>? queryParameters,
+  }) {
+    when(
+      () => _dio.get<Map<String, dynamic>>(
+        any(),
+        queryParameters: any(named: 'queryParameters'),
+      ),
+    ).thenAnswer((invocation) async {
+      capturedGetRequests.add(
+        CapturedGetRequest(
+          path: invocation.positionalArguments.first as String,
+          queryParameters:
+              invocation.namedArguments[#queryParameters] as Map<String, dynamic>?,
+        ),
+      );
+
+      return Response(
+        requestOptions: RequestOptions(path: path),
+        data: responseData,
+        statusCode: statusCode,
+      );
+    });
+  }
 
   void mockPost({
     required String path,

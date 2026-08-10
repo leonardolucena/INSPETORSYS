@@ -20,6 +20,7 @@ import 'package:inspetorsys/components/states/screen_loading_shimmers.dart';
 import 'package:inspetorsys/features/work_orders/presentation/widgets/work_orders_drawer.dart';
 import 'package:inspetorsys/l10n/app_localizations.dart';
 import 'package:inspetorsys/theme/app_colors.dart';
+import 'package:inspetorsys/theme/app_surface_colors.dart';
 
 class WorkOrderDetailPage extends StatefulWidget {
   const WorkOrderDetailPage({
@@ -45,10 +46,7 @@ class _WorkOrderDetailPageState extends State<WorkOrderDetailPage> {
     return BlocBuilder<WorkOrderDetailCubit, WorkOrderDetailState>(
         builder: (context, state) {
           final l10n = context.l10n;
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-        final screenBackgroundColor = isDark
-            ? AppColors.backgroundCardDark
-            : AppColors.listScreenBackgroundLight;
+          final screenBackgroundColor = AppSurfaceColors.screenBackground(context);
 
         return Scaffold(
           backgroundColor: screenBackgroundColor,
@@ -89,9 +87,7 @@ class _WorkOrderDetailPageState extends State<WorkOrderDetailPage> {
     AppLocalizations l10n,
   ) {
     final workOrder = state.workOrder!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBackgroundColor =
-        isDark ? AppColors.backgroundDark : AppColors.listScreenCardLight;
+    final cardBackgroundColor = AppSurfaceColors.elevatedSurface(context);
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(AppSizes.cardPadding),
@@ -176,7 +172,6 @@ class _WorkOrderDetailPageState extends State<WorkOrderDetailPage> {
                   SizedBox(height: AppSizes.spacingSm),
                   AppMap(
                     markerColor: AppColors.statusDanger,
-                    controlIconColor: AppColors.primaryTextColorLight,
                     points: [
                       AppMapPoint(
                         latitude: workOrder.latitude!,

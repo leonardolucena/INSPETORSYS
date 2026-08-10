@@ -7,6 +7,7 @@ import 'package:inspetorsys/core/connectivity/network_status.dart';
 import 'package:inspetorsys/core/errors/app_result.dart';
 import 'package:inspetorsys/features/sync/domain/entities/inspection_sync_result.dart';
 import 'package:inspetorsys/features/inspections/domain/usecases/get_pending_inspections_count_use_case.dart';
+import 'package:inspetorsys/features/inspections/domain/usecases/prefetch_inspections_use_case.dart';
 import 'package:inspetorsys/features/sync/domain/usecases/sync_pending_inspections_use_case.dart';
 import 'package:inspetorsys/features/work_orders/domain/usecases/prefetch_work_orders_use_case.dart';
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_cubit.dart';
@@ -24,10 +25,14 @@ class MockNetworkMonitor extends Mock implements NetworkMonitor {}
 class MockPrefetchWorkOrdersUseCase extends Mock
     implements PrefetchWorkOrdersUseCase {}
 
+class MockPrefetchInspectionsUseCase extends Mock
+    implements PrefetchInspectionsUseCase {}
+
 void main() {
   late MockSyncPendingInspectionsUseCase syncUseCase;
   late MockGetPendingInspectionsCountUseCase pendingCountUseCase;
   late MockPrefetchWorkOrdersUseCase prefetchWorkOrdersUseCase;
+  late MockPrefetchInspectionsUseCase prefetchInspectionsUseCase;
   late MockNetworkMonitor networkMonitor;
   late StreamController<NetworkStatus> statusController;
   late SyncCubit cubit;
@@ -36,6 +41,7 @@ void main() {
     syncUseCase = MockSyncPendingInspectionsUseCase();
     pendingCountUseCase = MockGetPendingInspectionsCountUseCase();
     prefetchWorkOrdersUseCase = MockPrefetchWorkOrdersUseCase();
+    prefetchInspectionsUseCase = MockPrefetchInspectionsUseCase();
     networkMonitor = MockNetworkMonitor();
     statusController = StreamController<NetworkStatus>.broadcast();
 
@@ -47,11 +53,13 @@ void main() {
     when(() => pendingCountUseCase())
         .thenAnswer((_) async => appSuccess(0));
     when(() => prefetchWorkOrdersUseCase()).thenAnswer((_) async {});
+    when(() => prefetchInspectionsUseCase()).thenAnswer((_) async {});
 
     cubit = SyncCubit(
       syncUseCase,
       pendingCountUseCase,
       prefetchWorkOrdersUseCase,
+      prefetchInspectionsUseCase,
       networkMonitor,
     );
   });

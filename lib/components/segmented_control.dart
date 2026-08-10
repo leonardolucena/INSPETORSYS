@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
-import 'package:inspetorsys/theme/app_colors.dart';
+import 'package:inspetorsys/theme/app_surface_colors.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
 class AppSegmentedControlSegment<T> {
@@ -34,21 +34,11 @@ class AppSegmentedControl<T> extends StatelessWidget {
     );
     final safeIndex = selectedIndex < 0 ? 0 : selectedIndex;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final trackColor = isDark
-        ? AppColors.segmentControlTrackDark
-        : AppColors.segmentControlTrackLight;
-    final trackBorderColor = isDark
-        ? AppColors.segmentControlBorderDark
-        : AppColors.segmentControlBorderLight;
-    final thumbColor = isDark
-        ? AppColors.segmentControlThumbDark
-        : AppColors.segmentControlThumbLight;
-    final selectedTextColor = isDark
-        ? AppColors.thirdTextColorDark
-        : AppColors.thirdTextColorLight;
-    final unselectedTextColor = isDark
-        ? AppColors.thirdTextColorDark.withValues(alpha: 0.65)
-        : AppColors.primaryTextColorLight.withValues(alpha: 0.75);
+    final trackColor = AppSurfaceColors.segmentTrack(context);
+    final trackBorderColor = AppSurfaceColors.segmentBorder(context);
+    final thumbColor = AppSurfaceColors.segmentThumb(context);
+    final selectedTextColor = AppSurfaceColors.segmentSelectedText(context);
+    final unselectedTextColor = AppSurfaceColors.segmentUnselectedText(context);
 
     return Container(
       height: 5.h,

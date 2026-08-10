@@ -21,6 +21,44 @@ class InspectionRemoteDataSourceImpl implements InspectionRemoteDataSource {
   final DioClient _dioClient;
 
   @override
+  Future<InspectionDto> fetchInspectionById(String id) async {
+    try {
+      final response = await _dioClient.client.get<Map<String, dynamic>>(
+        ApiConstants.inspectionByIdPath(id),
+      );
+
+      return InspectionDto.fromJson(response.data!);
+    } on DioException catch (exception) {
+      throw mapDioExceptionToFailure(exception);
+    } on AppFailure {
+      rethrow;
+    } catch (_) {
+      throw const UnknownFailure();
+    }
+  }
+
+  @override
+  Future<List<InspectionDto>> fetchInspections() async {
+    try {
+      final response = await _dioClient.client.get<List<dynamic>>(
+        ApiConstants.inspectionsPath,
+      );
+
+      final data = response.data ?? const [];
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(InspectionDto.fromJson)
+          .toList();
+    } on DioException catch (exception) {
+      throw mapDioExceptionToFailure(exception);
+    } on AppFailure {
+      rethrow;
+    } catch (_) {
+      throw const UnknownFailure();
+    }
+  }
+
+  @override
   Future<InspectionDto> uploadInspection(Inspection inspection) async {
     if (inspection.status == InspectionSyncStatus.draft) {
       throw const CacheFailure('Rascunhos não podem ser enviados para a API.');

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inspetorsys/core/responsive/app_sizes.dart';
-import 'package:inspetorsys/theme/app_colors.dart';
+import 'package:inspetorsys/theme/app_surface_colors.dart';
 
 class AppCard extends StatelessWidget {
   const AppCard({
@@ -24,13 +24,10 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final resolvedBackgroundColor = backgroundColor ??
-        (isDark ? AppColors.backgroundCardDark : AppColors.backgroundCardLight);
-    final resolvedBorderColor = borderColor ??
-        (isDark
-            ? AppColors.borderCardDark
-            : AppColors.primaryTextColorLight.withValues(alpha: 0.15));
+    final resolvedBackgroundColor =
+        backgroundColor ?? AppSurfaceColors.cardBackground(context);
+    final resolvedBorderColor =
+        borderColor ?? AppSurfaceColors.subtleBorder(context);
 
     final card = Container(
       width: double.infinity,

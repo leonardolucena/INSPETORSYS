@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Idioma'**
   String get drawerLanguage;
 
+  /// No description provided for @drawerHighContrast.
+  ///
+  /// In pt, this message translates to:
+  /// **'Alto contraste'**
+  String get drawerHighContrast;
+
   /// No description provided for @drawerDarkMode.
   ///
   /// In pt, this message translates to:
@@ -235,6 +241,18 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Nenhuma ordem com o filtro selecionado.'**
   String get workOrdersEmptyMessageFiltered;
+
+  /// No description provided for @workOrdersEmptyMessageSearch.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma ordem de serviço com este código.'**
+  String get workOrdersEmptyMessageSearch;
+
+  /// No description provided for @searchByWorkOrderCodePlaceholder.
+  ///
+  /// In pt, this message translates to:
+  /// **'Buscar por código da OS'**
+  String get searchByWorkOrderCodePlaceholder;
 
   /// No description provided for @refreshAction.
   ///
@@ -374,11 +392,53 @@ abstract class AppLocalizations {
   /// **'Nenhuma inspeção com o status selecionado.'**
   String get inspectionsEmptyMessageFiltered;
 
+  /// No description provided for @inspectionsEmptyMessageSearch.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhuma inspeção com este código de OS.'**
+  String get inspectionsEmptyMessageSearch;
+
   /// No description provided for @inspectionNotEditable.
   ///
   /// In pt, this message translates to:
   /// **'Esta inspeção já foi concluída e não pode ser editada.'**
   String get inspectionNotEditable;
+
+  /// No description provided for @inspectionDetailTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Detalhes da inspeção'**
+  String get inspectionDetailTitle;
+
+  /// No description provided for @inspectionDetailLoadError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar os detalhes da inspeção.'**
+  String get inspectionDetailLoadError;
+
+  /// No description provided for @inspectionDetailCreatedAtLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criada em'**
+  String get inspectionDetailCreatedAtLabel;
+
+  /// No description provided for @inspectionDetailUpdatedAtLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atualizada em'**
+  String get inspectionDetailUpdatedAtLabel;
+
+  /// No description provided for @inspectionDetailSyncedAtLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Enviada em'**
+  String get inspectionDetailSyncedAtLabel;
+
+  /// No description provided for @inspectionDetailEmptyValue.
+  ///
+  /// In pt, this message translates to:
+  /// **'—'**
+  String get inspectionDetailEmptyValue;
 
   /// No description provided for @inspectionRetryQueued.
   ///
@@ -415,6 +475,18 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Falhou'**
   String get syncStatusFailed;
+
+  /// No description provided for @inspectionRemoteSyncSynced.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sincronizado'**
+  String get inspectionRemoteSyncSynced;
+
+  /// No description provided for @inspectionRemoteSyncNotSynced.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não sincronizado'**
+  String get inspectionRemoteSyncNotSynced;
 
   /// No description provided for @inspectionFormNewTitle.
   ///

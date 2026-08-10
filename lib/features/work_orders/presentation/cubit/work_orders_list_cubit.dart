@@ -123,6 +123,14 @@ class WorkOrdersListCubit extends Cubit<WorkOrdersListState> {
     await _fetchWorkOrders();
   }
 
+  void setCodeSearchQuery(String query) {
+    if (state.codeSearchQuery == query) {
+      return;
+    }
+
+    emit(state.copyWith(codeSearchQuery: query));
+  }
+
   Future<void> _fetchWorkOrders() async {
     final cached = await _getCachedWorkOrdersUseCase(
       status: state.statusFilter,

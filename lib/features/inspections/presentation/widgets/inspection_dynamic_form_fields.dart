@@ -14,6 +14,7 @@ import 'package:inspetorsys/features/inspections/domain/constants/inspection_geo
 import 'package:inspetorsys/features/inspections/domain/enums/inspection_condition.dart';
 import 'package:inspetorsys/features/inspections/domain/enums/inspection_form_field_type.dart';
 import 'package:inspetorsys/features/inspections/presentation/cubit/inspection_form_state.dart';
+import 'package:inspetorsys/theme/app_surface_colors.dart';
 import 'package:inspetorsys/theme/app_colors.dart';
 import 'package:inspetorsys/theme/app_text_theme.dart';
 
@@ -89,8 +90,7 @@ class InspectionDynamicFormFields extends StatelessWidget {
   }
 
   static Color _cardBackgroundColor(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark ? AppColors.backgroundDark : AppColors.listScreenCardLight;
+    return AppSurfaceColors.elevatedSurface(context);
   }
 
   static Widget sectionCard(

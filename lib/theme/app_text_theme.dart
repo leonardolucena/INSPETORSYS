@@ -211,6 +211,33 @@ abstract final class AppTextTheme {
     );
   }
 
+  static TextTheme get highContrastLight =>
+      _emphasize(light).apply(bodyColor: AppColors.hcPrimaryTextLight, displayColor: AppColors.hcPrimaryTextLight);
+
+  static TextTheme get highContrastDark =>
+      _emphasize(dark).apply(bodyColor: AppColors.hcPrimaryTextDark, displayColor: AppColors.hcPrimaryTextDark);
+
+  static TextTheme _emphasize(TextTheme base) {
+    return base.copyWith(
+      displayLarge: base.displayLarge?.copyWith(fontWeight: FontWeight.w700),
+      displayMedium: base.displayMedium?.copyWith(fontWeight: FontWeight.w700),
+      displaySmall: base.displaySmall?.copyWith(fontWeight: FontWeight.w700),
+      headlineLarge: base.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
+      headlineMedium:
+          base.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+      headlineSmall: base.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+      titleLarge: base.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+      titleMedium: base.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+      titleSmall: base.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+      bodyLarge: base.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+      bodyMedium: base.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+      bodySmall: base.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+      labelLarge: base.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+      labelMedium: base.labelMedium?.copyWith(fontWeight: FontWeight.w800),
+      labelSmall: base.labelSmall?.copyWith(fontWeight: FontWeight.w800),
+    );
+  }
+
   static TextStyle get secondaryLight => _style(
         color: AppColors.secondTextColorLight,
         fontSize: 14,

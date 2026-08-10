@@ -40,6 +40,10 @@ import 'package:inspetorsys/core/maps/fmtc_map_tile_cache_service.dart'
     as _i439;
 import 'package:inspetorsys/core/maps/map_tile_cache_service.dart' as _i349;
 import 'package:inspetorsys/core/network/dio_client.dart' as _i102;
+import 'package:inspetorsys/core/notifications/flutter_local_notification_service.dart'
+    as _i367;
+import 'package:inspetorsys/core/notifications/notification_service.dart'
+    as _i417;
 import 'package:inspetorsys/core/permissions/app_permission_service.dart'
     as _i474;
 import 'package:inspetorsys/core/permissions/permission_service.dart' as _i544;
@@ -48,8 +52,14 @@ import 'package:inspetorsys/core/session/session_token_provider.dart' as _i4;
 import 'package:inspetorsys/core/storage/app_paths.dart' as _i428;
 import 'package:inspetorsys/core/storage/secure_token_storage.dart' as _i589;
 import 'package:inspetorsys/core/storage/token_storage.dart' as _i288;
+import 'package:inspetorsys/core/theme/contrast_preference_storage.dart'
+    as _i568;
+import 'package:inspetorsys/core/theme/presentation/cubit/high_contrast_cubit.dart'
+    as _i555;
 import 'package:inspetorsys/core/theme/presentation/cubit/theme_cubit.dart'
     as _i969;
+import 'package:inspetorsys/core/theme/shared_prefs_contrast_preference_storage.dart'
+    as _i566;
 import 'package:inspetorsys/core/theme/shared_prefs_theme_preference_storage.dart'
     as _i286;
 import 'package:inspetorsys/core/theme/theme_preference_storage.dart' as _i242;
@@ -107,18 +117,28 @@ import 'package:inspetorsys/features/inspections/domain/usecases/capture_inspect
     as _i519;
 import 'package:inspetorsys/features/inspections/domain/usecases/complete_inspection_use_case.dart'
     as _i963;
+import 'package:inspetorsys/features/inspections/domain/usecases/get_cached_inspections_use_case.dart'
+    as _i360;
+import 'package:inspetorsys/features/inspections/domain/usecases/get_inspection_by_client_id_use_case.dart'
+    as _i492;
 import 'package:inspetorsys/features/inspections/domain/usecases/get_inspection_form_schema_use_case.dart'
     as _i1053;
+import 'package:inspetorsys/features/inspections/domain/usecases/get_inspections_use_case.dart'
+    as _i424;
 import 'package:inspetorsys/features/inspections/domain/usecases/get_local_inspection_by_client_id_use_case.dart'
     as _i785;
 import 'package:inspetorsys/features/inspections/domain/usecases/get_local_inspections_use_case.dart'
     as _i477;
 import 'package:inspetorsys/features/inspections/domain/usecases/get_pending_inspections_count_use_case.dart'
     as _i1052;
+import 'package:inspetorsys/features/inspections/domain/usecases/prefetch_inspections_use_case.dart'
+    as _i368;
 import 'package:inspetorsys/features/inspections/domain/usecases/retry_failed_inspection_use_case.dart'
     as _i630;
 import 'package:inspetorsys/features/inspections/domain/usecases/save_inspection_draft_use_case.dart'
     as _i1057;
+import 'package:inspetorsys/features/inspections/presentation/cubit/inspection_detail_cubit.dart'
+    as _i392;
 import 'package:inspetorsys/features/inspections/presentation/cubit/inspection_form_cubit.dart'
     as _i420;
 import 'package:inspetorsys/features/inspections/presentation/cubit/inspections_list_cubit.dart'
@@ -226,7 +246,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i349.MapTileCacheService>(
       () => _i439.FmtcMapTileCacheService(),
     );
+    gh.lazySingleton<_i568.ContrastPreferenceStorage>(
+      () => _i566.SharedPrefsContrastPreferenceStorage(
+        gh<_i460.SharedPreferences>(),
+      ),
+    );
     gh.lazySingleton<_i397.UuidGenerator>(() => const _i911.AppUuidGenerator());
+    gh.lazySingleton<_i555.HighContrastCubit>(
+      () => _i555.HighContrastCubit(gh<_i568.ContrastPreferenceStorage>()),
+    );
     gh.lazySingleton<_i4.SessionTokenProvider>(
       () => _i4.SessionTokenProvider(gh<_i288.TokenStorage>()),
     );
@@ -249,6 +277,11 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i14.ImageCompressor>(),
       ),
     );
+    gh.lazySingleton<_i417.NotificationService>(
+      () => _i367.FlutterLocalNotificationService(
+        gh<_i569.LocalePreferenceStorage>(),
+      ),
+    );
     gh.factory<_i650.CaptureInspectionLocationUseCase>(
       () => _i650.CaptureInspectionLocationUseCase(gh<_i566.LocationService>()),
     );
@@ -267,37 +300,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i161.InternetConnection>(),
       ),
     );
-    gh.lazySingleton<_i518.InspectionRepository>(
-      () => _i180.InspectionRepositoryImpl(
-        gh<_i806.InspectionLocalDataSource>(),
-        gh<_i397.SyncQueueLocalDataSource>(),
-        gh<_i917.WorkOrderLocalDataSource>(),
-        gh<_i397.UuidGenerator>(),
-      ),
-    );
-    gh.factory<_i963.CompleteInspectionUseCase>(
-      () => _i963.CompleteInspectionUseCase(gh<_i518.InspectionRepository>()),
-    );
-    gh.factory<_i785.GetLocalInspectionByClientIdUseCase>(
-      () => _i785.GetLocalInspectionByClientIdUseCase(
-        gh<_i518.InspectionRepository>(),
-      ),
-    );
-    gh.factory<_i477.GetLocalInspectionsUseCase>(
-      () => _i477.GetLocalInspectionsUseCase(gh<_i518.InspectionRepository>()),
-    );
-    gh.factory<_i1052.GetPendingInspectionsCountUseCase>(
-      () => _i1052.GetPendingInspectionsCountUseCase(
-        gh<_i518.InspectionRepository>(),
-      ),
-    );
-    gh.factory<_i630.RetryFailedInspectionUseCase>(
-      () =>
-          _i630.RetryFailedInspectionUseCase(gh<_i518.InspectionRepository>()),
-    );
-    gh.factory<_i1057.SaveInspectionDraftUseCase>(
-      () => _i1057.SaveInspectionDraftUseCase(gh<_i518.InspectionRepository>()),
-    );
     gh.lazySingleton<_i102.DioClient>(
       () => appModule.dioClient(gh<_i4.SessionTokenProvider>()),
     );
@@ -312,12 +314,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i223.AuthRemoteDataSource>(
       () => _i723.AuthRemoteDataSourceImpl(gh<_i102.DioClient>()),
     );
-    gh.factory<_i692.InspectionsListCubit>(
-      () => _i692.InspectionsListCubit(
-        gh<_i477.GetLocalInspectionsUseCase>(),
-        gh<_i630.RetryFailedInspectionUseCase>(),
-      ),
-    );
     gh.lazySingleton<_i993.ConnectionStatusCubit>(
       () => _i993.ConnectionStatusCubit(gh<_i340.NetworkMonitor>()),
     );
@@ -329,6 +325,16 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i397.SyncQueueLocalDataSource>(),
         gh<_i806.InspectionLocalDataSource>(),
         gh<_i80.InspectionRemoteDataSource>(),
+      ),
+    );
+    gh.lazySingleton<_i518.InspectionRepository>(
+      () => _i180.InspectionRepositoryImpl(
+        gh<_i806.InspectionLocalDataSource>(),
+        gh<_i80.InspectionRemoteDataSource>(),
+        gh<_i397.SyncQueueLocalDataSource>(),
+        gh<_i917.WorkOrderLocalDataSource>(),
+        gh<_i340.NetworkMonitor>(),
+        gh<_i397.UuidGenerator>(),
       ),
     );
     gh.lazySingleton<_i97.AuthRepository>(
@@ -393,9 +399,62 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i841.LogoutUseCase>(),
       ),
     );
+    gh.factory<_i963.CompleteInspectionUseCase>(
+      () => _i963.CompleteInspectionUseCase(gh<_i518.InspectionRepository>()),
+    );
+    gh.factory<_i360.GetCachedInspectionsUseCase>(
+      () => _i360.GetCachedInspectionsUseCase(gh<_i518.InspectionRepository>()),
+    );
+    gh.factory<_i360.GetCachedInspectionByClientIdUseCase>(
+      () => _i360.GetCachedInspectionByClientIdUseCase(
+        gh<_i518.InspectionRepository>(),
+      ),
+    );
+    gh.factory<_i492.GetInspectionByClientIdUseCase>(
+      () => _i492.GetInspectionByClientIdUseCase(
+        gh<_i518.InspectionRepository>(),
+      ),
+    );
+    gh.factory<_i424.GetInspectionsUseCase>(
+      () => _i424.GetInspectionsUseCase(gh<_i518.InspectionRepository>()),
+    );
+    gh.factory<_i785.GetLocalInspectionByClientIdUseCase>(
+      () => _i785.GetLocalInspectionByClientIdUseCase(
+        gh<_i518.InspectionRepository>(),
+      ),
+    );
+    gh.factory<_i477.GetLocalInspectionsUseCase>(
+      () => _i477.GetLocalInspectionsUseCase(gh<_i518.InspectionRepository>()),
+    );
+    gh.factory<_i1052.GetPendingInspectionsCountUseCase>(
+      () => _i1052.GetPendingInspectionsCountUseCase(
+        gh<_i518.InspectionRepository>(),
+      ),
+    );
+    gh.factory<_i630.RetryFailedInspectionUseCase>(
+      () =>
+          _i630.RetryFailedInspectionUseCase(gh<_i518.InspectionRepository>()),
+    );
+    gh.factory<_i1057.SaveInspectionDraftUseCase>(
+      () => _i1057.SaveInspectionDraftUseCase(gh<_i518.InspectionRepository>()),
+    );
+    gh.factory<_i368.PrefetchInspectionsUseCase>(
+      () => _i368.PrefetchInspectionsUseCase(
+        gh<_i518.InspectionRepository>(),
+        gh<_i340.NetworkMonitor>(),
+      ),
+    );
     gh.factory<_i1053.GetInspectionFormSchemaUseCase>(
       () => _i1053.GetInspectionFormSchemaUseCase(
         gh<_i367.WorkOrderRepository>(),
+      ),
+    );
+    gh.factory<_i392.InspectionDetailCubit>(
+      () => _i392.InspectionDetailCubit(
+        gh<_i492.GetInspectionByClientIdUseCase>(),
+        gh<_i360.GetCachedInspectionByClientIdUseCase>(),
+        gh<_i738.GetCachedWorkOrderByIdUseCase>(),
+        gh<_i340.NetworkMonitor>(),
       ),
     );
     gh.lazySingleton<_i755.SyncCubit>(
@@ -403,6 +462,15 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i105.SyncPendingInspectionsUseCase>(),
         gh<_i1052.GetPendingInspectionsCountUseCase>(),
         gh<_i142.PrefetchWorkOrdersUseCase>(),
+        gh<_i368.PrefetchInspectionsUseCase>(),
+        gh<_i340.NetworkMonitor>(),
+      ),
+    );
+    gh.factory<_i692.InspectionsListCubit>(
+      () => _i692.InspectionsListCubit(
+        gh<_i424.GetInspectionsUseCase>(),
+        gh<_i360.GetCachedInspectionsUseCase>(),
+        gh<_i630.RetryFailedInspectionUseCase>(),
         gh<_i340.NetworkMonitor>(),
       ),
     );

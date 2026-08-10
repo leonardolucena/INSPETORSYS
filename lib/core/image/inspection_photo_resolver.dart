@@ -21,6 +21,11 @@ class InspectionPhotoSource {
   final String? networkUrl;
 }
 
+/// Relative photo paths served by the mock API (e.g. `/uploads/photo.jpg`).
+bool isApiRelativePhotoPath(String value) {
+  return value.startsWith('/uploads/');
+}
+
 /// Resolves a stored inspection photo reference to a local file or network URL.
 ///
 /// Local paths are preferred. Relative API paths such as `/uploads/...` are
@@ -34,16 +39,11 @@ InspectionPhotoSource? resolveInspectionPhotoSource(String? value) {
     return InspectionPhotoSource.network(value);
   }
 
-  if (value.startsWith('/')) {
+  if (isApiRelativePhotoPath(value)) {
     return InspectionPhotoSource.network('${ApiConstants.baseUrl}$value');
   }
 
-  final file = File(value);
-  if (file.existsSync()) {
-    return InspectionPhotoSource.file(value);
-  }
-
-  return null;
+  return InspectionPhotoSource.file(value);
 }
 
 String? resolveInspectionPhotoPathForPersistence({

@@ -27,6 +27,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get drawerLanguage => 'Idioma';
 
   @override
+  String get drawerHighContrast => 'Alto contraste';
+
+  @override
   String get drawerDarkMode => 'Modo escuro';
 
   @override
@@ -79,6 +82,13 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get workOrdersEmptyMessageFiltered =>
       'Nenhuma ordem com o filtro selecionado.';
+
+  @override
+  String get workOrdersEmptyMessageSearch =>
+      'Nenhuma ordem de serviço com este código.';
+
+  @override
+  String get searchByWorkOrderCodePlaceholder => 'Buscar por código da OS';
 
   @override
   String get refreshAction => 'Atualizar';
@@ -154,8 +164,31 @@ class AppLocalizationsPt extends AppLocalizations {
       'Nenhuma inspeção com o status selecionado.';
 
   @override
+  String get inspectionsEmptyMessageSearch =>
+      'Nenhuma inspeção com este código de OS.';
+
+  @override
   String get inspectionNotEditable =>
       'Esta inspeção já foi concluída e não pode ser editada.';
+
+  @override
+  String get inspectionDetailTitle => 'Detalhes da inspeção';
+
+  @override
+  String get inspectionDetailLoadError =>
+      'Não foi possível carregar os detalhes da inspeção.';
+
+  @override
+  String get inspectionDetailCreatedAtLabel => 'Criada em';
+
+  @override
+  String get inspectionDetailUpdatedAtLabel => 'Atualizada em';
+
+  @override
+  String get inspectionDetailSyncedAtLabel => 'Enviada em';
+
+  @override
+  String get inspectionDetailEmptyValue => '—';
 
   @override
   String get inspectionRetryQueued => 'Inspeção reenviada para sincronização.';
@@ -174,6 +207,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get syncStatusFailed => 'Falhou';
+
+  @override
+  String get inspectionRemoteSyncSynced => 'Sincronizado';
+
+  @override
+  String get inspectionRemoteSyncNotSynced => 'Não sincronizado';
 
   @override
   String get inspectionFormNewTitle => 'Nova inspeção';

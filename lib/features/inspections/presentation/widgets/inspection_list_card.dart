@@ -10,7 +10,8 @@ import 'package:inspetorsys/core/utils/app_date_formatter.dart';
 import 'package:inspetorsys/features/inspections/domain/entities/local_inspection_list_item.dart';
 import 'package:inspetorsys/features/inspections/domain/enums/inspection_sync_status.dart';
 import 'package:inspetorsys/features/inspections/presentation/mappers/inspection_sync_status_mapper.dart';
-import 'package:inspetorsys/theme/app_colors.dart';
+import 'package:inspetorsys/features/inspections/presentation/widgets/inspection_remote_sync_badge.dart';
+import 'package:inspetorsys/theme/app_surface_colors.dart';
 import 'package:inspetorsys/theme/app_text_theme.dart';
 
 class InspectionListCard extends StatelessWidget {
@@ -35,12 +36,11 @@ class InspectionListCard extends StatelessWidget {
     final inspection = item.inspection;
     final workOrderLabel = item.workOrderCode ?? inspection.workOrderId;
     final errorMessage = inspection.syncErrorMessage?.trim();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = invertedSurface
-        ? (isDark ? AppColors.backgroundDark : AppColors.listScreenCardLight)
+        ? AppSurfaceColors.elevatedSurface(context)
         : null;
     final borderColor = invertedSurface
-        ? (isDark ? AppColors.borderCardDark : AppColors.listScreenBorderLight)
+        ? AppSurfaceColors.cardBorder(context)
         : null;
 
     return AppCard(
@@ -59,7 +59,15 @@ class InspectionListCard extends StatelessWidget {
                 child: AppAccentUnderlineText(label: workOrderLabel),
               ),
               SizedBox(width: AppSizes.spacingSm),
-              AppStatusBadge(status: inspection.status.badgeStatus),
+              Wrap(
+                spacing: AppSizes.spacingXs,
+                runSpacing: AppSizes.spacingXs,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  InspectionRemoteSyncBadge(status: inspection.status),
+                  AppStatusBadge(status: inspection.status.badgeStatus),
+                ],
+              ),
             ],
           ),
           if (item.workOrderTitle != null) ...[

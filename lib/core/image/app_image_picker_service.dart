@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:image_picker/image_picker.dart';
+import 'package:inspetorsys/core/image/image_constants.dart';
 import 'package:inspetorsys/core/image/image_exception.dart';
 import 'package:inspetorsys/core/image/image_picker_service.dart';
 import 'package:inspetorsys/core/permissions/app_permission.dart';
@@ -29,7 +30,9 @@ class AppImagePickerService implements ImagePickerService {
     final pickedFile = await _imagePicker.pickImage(
       source: ImageSource.camera,
       preferredCameraDevice: CameraDevice.rear,
-      imageQuality: 100,
+      maxWidth: ImageConstants.maxDimension.toDouble(),
+      maxHeight: ImageConstants.maxDimension.toDouble(),
+      imageQuality: ImageConstants.qualitySteps.first,
     );
 
     if (pickedFile == null) {

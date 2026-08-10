@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inspetorsys/core/connectivity/network_monitor.dart';
 import 'package:inspetorsys/core/connectivity/network_status.dart';
 import 'package:inspetorsys/features/inspections/domain/usecases/get_pending_inspections_count_use_case.dart';
+import 'package:inspetorsys/features/inspections/domain/usecases/prefetch_inspections_use_case.dart';
 import 'package:inspetorsys/features/sync/domain/entities/inspection_sync_result.dart';
 import 'package:inspetorsys/features/sync/domain/usecases/sync_pending_inspections_use_case.dart';
 import 'package:inspetorsys/features/work_orders/domain/usecases/prefetch_work_orders_use_case.dart';
@@ -16,12 +17,14 @@ class SyncCubit extends Cubit<SyncState> {
     this._syncPendingInspectionsUseCase,
     this._getPendingInspectionsCountUseCase,
     this._prefetchWorkOrdersUseCase,
+    this._prefetchInspectionsUseCase,
     this._networkMonitor,
   ) : super(const SyncState());
 
   final SyncPendingInspectionsUseCase _syncPendingInspectionsUseCase;
   final GetPendingInspectionsCountUseCase _getPendingInspectionsCountUseCase;
   final PrefetchWorkOrdersUseCase _prefetchWorkOrdersUseCase;
+  final PrefetchInspectionsUseCase _prefetchInspectionsUseCase;
   final NetworkMonitor _networkMonitor;
 
   StreamSubscription<NetworkStatus>? _connectivitySubscription;
@@ -106,6 +109,7 @@ class SyncCubit extends Cubit<SyncState> {
     );
     await refreshPendingCount();
     unawaited(_prefetchWorkOrdersUseCase());
+    unawaited(_prefetchInspectionsUseCase());
   }
 
   void _handleNetworkStatusChanged(NetworkStatus status) {

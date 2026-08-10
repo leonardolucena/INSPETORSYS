@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inspetorsys/core/connectivity/network_monitor.dart';
 import 'package:inspetorsys/core/database/app_database.dart';
 import 'package:inspetorsys/core/errors/app_failure.dart';
 import 'package:inspetorsys/core/utils/app_uuid_generator.dart';
@@ -23,6 +24,8 @@ import 'package:mocktail/mocktail.dart';
 class MockInspectionRemoteDataSource extends Mock
     implements InspectionRemoteDataSource {}
 
+class MockNetworkMonitor extends Mock implements NetworkMonitor {}
+
 void main() {
   late File databaseFile;
   late File fixturePhoto;
@@ -31,6 +34,7 @@ void main() {
   late SyncQueueLocalDataSourceImpl syncQueueLocalDataSource;
   late InspectionRepositoryImpl repository;
   late MockInspectionRemoteDataSource remoteDataSource;
+  late MockNetworkMonitor networkMonitor;
   late InspectionSyncService syncService;
 
   const testFormSchema = InspectionFormSchema(
@@ -104,10 +108,15 @@ void main() {
     inspectionLocalDataSource = InspectionLocalDataSourceImpl(database);
     syncQueueLocalDataSource = SyncQueueLocalDataSourceImpl(database);
     remoteDataSource = MockInspectionRemoteDataSource();
+    networkMonitor = MockNetworkMonitor();
+    when(() => networkMonitor.hasInternetAccess()).thenAnswer((_) async => false);
+    when(() => remoteDataSource.fetchInspections()).thenAnswer((_) async => []);
     repository = InspectionRepositoryImpl(
       inspectionLocalDataSource,
+      remoteDataSource,
       syncQueueLocalDataSource,
       WorkOrderLocalDataSourceImpl(database),
+      networkMonitor,
       const AppUuidGenerator(),
     );
     syncService = InspectionSyncService(

@@ -19,7 +19,7 @@ import 'package:inspetorsys/features/inspections/presentation/widgets/inspection
 import 'package:inspetorsys/components/states/screen_loading_shimmers.dart';
 import 'package:inspetorsys/features/sync/presentation/cubit/sync_cubit.dart';
 import 'package:inspetorsys/features/work_orders/presentation/widgets/work_orders_drawer.dart';
-import 'package:inspetorsys/theme/app_colors.dart';
+import 'package:inspetorsys/theme/app_surface_colors.dart';
 
 class InspectionFormPage extends StatefulWidget {
   const InspectionFormPage({
@@ -162,10 +162,7 @@ class _InspectionFormPageState extends State<InspectionFormPage> {
       },
       builder: (context, state) {
         final l10n = context.l10n;
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        final screenBackgroundColor = isDark
-            ? AppColors.backgroundCardDark
-            : AppColors.listScreenBackgroundLight;
+        final screenBackgroundColor = AppSurfaceColors.screenBackground(context);
 
         return Scaffold(
           backgroundColor: screenBackgroundColor,
