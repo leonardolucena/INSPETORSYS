@@ -12,7 +12,7 @@ Este README documenta **o que o app faz**, as **decisões técnicas** e a **just
 2. [Como executar](#como-executar)
 3. [Arquitetura](#arquitetura)
 4. [Decisões técnicas por critério de avaliação](#decisões-técnicas-por-critério-de-avaliação)
-5. [Modelagem offline e fila de sync](#modelagem-offline-e-fila-de-sync)
+5. [Modelagem offline e fila de sync](#modelagem-offline-e-fila-de-sync) — [como funciona a fila](#como-funciona-a-fila-de-sincronização)
 6. [Tratamento de erros e estados de UI](#tratamento-de-erros-e-estados-de-ui)
 7. [Testes](#testes)
 8. [Estrutura de pastas](#estrutura-de-pastas)
@@ -280,20 +280,97 @@ flutter analyze lib test
 |---|---|
 | `work_orders` | Cache das OS — sobrevive offline |
 | `inspections` | Inspeções locais; PK = `clientId` (UUID do device) |
-| `sync_queue` | Fila de envio com `retryCount`, `lastAttemptAt`, `nextRetryAt` |
+| `sync_queue` | Outbox de envio — uma linha por inspeção aguardando upload |
+
+Colunas principais de `sync_queue`:
+
+| Coluna | Papel |
+|---|---|
+| `inspectionClientId` | Referência ao `clientId` da inspeção |
+| `status` | `'pending'` enquanto aguarda envio (linha removida após sucesso ou falha permanente) |
+| `retryCount` | Tentativas de upload já falhadas |
+| `lastAttemptAt` | Timestamp da última falha |
+| `nextRetryAt` | Próxima tentativa permitida (backoff) |
+| `lastErrorMessage` | Último erro durante tentativas ativas na fila |
 
 ### Máquina de estados da inspeção
 
 ```
 draft ──(concluir)──► pending ──(sync OK)──► synced
                          │
-                         ├──(rede)──► mantém pending + retry/backoff
-                         └──(400/409)──► failed (sem retry automático)
+                         ├──(rede/5xx)──► mantém pending + retry/backoff na fila
+                         └──(400/409 ou limite de tentativas)──► failed (fora da fila)
+                              │
+                              └──(Reenviar manual)──► pending + re-enfileira
 ```
 
-- **`draft`:** nunca vai para a API.
-- **`pending` / `failed`:** elegíveis para a fila; processadas em ordem.
+- **`draft`:** nunca vai para a API; qualquer entrada na fila é removida ao salvar rascunho.
+- **`pending`:** inspeção concluída offline; fica na fila (ou aguarda `nextRetryAt` após falha de rede).
+- **`failed`:** fora da fila — erro permanente (400/409) ou limite de 5 tentativas; o técnico precisa tocar em **Reenviar** para voltar a `pending` e re-enfileirar.
 - **Idempotência:** reenvio reutiliza o mesmo `clientId`; API responde `200` se já existir.
+
+### Como funciona a fila de sincronização
+
+A fila segue o padrão **outbox**: a inspeção é salva localmente primeiro; o envio para a API é assíncrono e auditável.
+
+#### 1. Entrada na fila
+
+Ao **concluir** uma inspeção (com ou sem rede):
+
+1. Grava em `inspections` com `status = pending`.
+2. Insere linha em `sync_queue` (dedup: remove entrada anterior do mesmo `clientId` e recria com `retryCount = 0`).
+3. Atualiza o contador de pendentes na UI — **não dispara sync imediato**.
+
+**Rascunhos** (`draft`) nunca entram na fila; ao salvar draft, a entrada correspondente é removida.
+
+Referências: `InspectionRepositoryImpl.completeInspection`, `SyncQueueLocalDataSourceImpl.enqueueInspection`.
+
+#### 2. Processamento (`InspectionSyncService`)
+
+Quando um gatilho de sync roda, `processQueue()` executa:
+
+1. Busca itens processáveis: `status = 'pending'` na fila **e** (`nextRetryAt` nulo ou vencido), ordem FIFO por `id`.
+2. Carrega a inspeção pelo `inspectionClientId`.
+3. Remove da fila se órfã (inspeção inexistente, `draft` ou `synced`).
+4. Envia `POST /inspections` multipart com o mesmo `clientId` (idempotente).
+5. **Sucesso (200/201):** inspeção → `synced`, remove da fila.
+6. **400/409:** inspeção → `failed` + `syncErrorMessage`, remove da fila (sem retry automático).
+7. **Rede / 5xx / outros:** incrementa `retryCount`; se ≥ 5 → `failed` permanente e remove da fila; senão mantém `pending` e agenda `nextRetryAt` com backoff (`30s × 2^n`, ex.: 60s → 120s → 240s → 480s).
+
+Referência: `InspectionSyncService.processQueue`.
+
+#### 3. Dois estados paralelos
+
+O usuário vê o **`inspections.status`**; o motor de envio usa a **`sync_queue`**:
+
+```mermaid
+flowchart LR
+  complete[Concluir_inspecao] --> inspPending[inspections_pending]
+  complete --> queueRow[sync_queue_pending]
+  queueRow --> upload[POST_multipart]
+  upload -->|OK| inspSynced[inspections_synced]
+  upload -->|OK| removeQueue[remove_da_fila]
+  upload -->|400_409| inspFailed[inspections_failed]
+  upload -->|400_409| removeQueue
+  upload -->|rede_5xx| backoff[backoff_nextRetryAt]
+  retryManual[Reenviar_manual] --> queueRow
+```
+
+- O badge de pendentes na UI conta **`inspections` com status `pending`**, não linhas da fila.
+- `syncErrorMessage` fica na inspeção; `lastErrorMessage` na fila só durante tentativas ativas.
+
+#### 4. Quando a fila roda
+
+| Gatilho | Comportamento |
+|---|---|
+| Rede volta | Auto-sync só na transição **offline → online** (não no boot se já estiver online) |
+| Botão manual | Drawer “Sincronizar inspeções”; também após **Reenviar** no histórico |
+| Background | `workmanager` a cada **1 h**, delay inicial **15 min**, exige `NetworkType.connected` |
+| Pós-sync | Prefetch de OS + pull `GET /inspections` para merge no histórico |
+
+Notificação local de background só quando há itens sincronizados ou marcados como `failed`.
+
+Referências: `SyncCubit`, `BackgroundSyncScheduler`.
 
 ### Fluxo de sincronização
 
@@ -301,17 +378,17 @@ draft ──(concluir)──► pending ──(sync OK)──► synced
 flowchart TD
     A[Evento: rede online / botão manual / workmanager] --> B{hasInternetAccess?}
     B -- não --> Z[Aguarda]
-    B -- sim --> C[Seleciona pending + failed da sync_queue]
+    B -- sim --> C[Seleciona pending da sync_queue com nextRetryAt vencido]
     C --> D[POST /inspections multipart]
     D -- 201 ou 200 --> E[status = synced, salva serverId + syncedAt]
-    D -- rede --> F[mantém pending, agenda retry exponencial]
-    D -- 400/409 --> G[status = failed, salva syncErrorMessage]
+    D -- rede ou 5xx --> F[mantém pending, agenda retry exponencial até 5 tentativas]
+    D -- 400/409 --> G[status = failed, salva syncErrorMessage, remove da fila]
 ```
 
 **Gatilhos de sync:**
-1. `NetworkMonitor.onStatusChanged` → `NetworkStatus.online` (automático no foreground)
-2. Botão manual no drawer (“Sincronizar inspeções”)
-3. `workmanager` periódico (`BackgroundSyncScheduler.registerPeriodicSync`) após login — resultado exibido em notificação local quando há itens sincronizados ou marcados como `failed`
+1. `NetworkMonitor.onStatusChanged` → transição para `NetworkStatus.online` (automático no foreground)
+2. Botão manual no drawer (“Sincronizar inspeções”) ou reenvio no histórico
+3. `workmanager` periódico (`BackgroundSyncScheduler.registerPeriodicSync`) após login — notificação local quando há itens sincronizados ou marcados como `failed`
 
 ---
 
